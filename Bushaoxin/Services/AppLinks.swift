@@ -7,19 +7,25 @@ import Foundation
 /// 2. Apple 审核会真的点开隐私政策和用户协议链接 ——
 ///    如果返回 404，直接以「隐私政策不可访问」被拒。
 ///
-/// ⚠️ 上架前必须做的事：把下面三个 URL 换成真实可访问的地址。
+/// 当前托管在 GitHub Pages：
+///   仓库 bushiaoxin 的根目录（main 分支）
+///   → https://kingswift429.github.io/bushaoxin/privacy.html
+///   → https://kingswift429.github.io/bushaoxin/terms.html
 enum AppLinks {
 
-    // MARK: - 待替换的占位配置
+    // MARK: - 对外地址
 
     /// 客服邮箱。必须是真实可收信的地址，审核可能会发邮件验证。
-    static let supportEmail = "support@example.com"
+    static let supportEmail = "support@bushaoxin.app"
 
     /// 隐私政策。**必须真实可访问**，不能是 404。
-    static let privacyPolicy = "https://example.com/privacy"
+    static let privacyPolicy = "https://kingswift429.github.io/bushaoxin/privacy.html"
 
     /// 用户协议。
-    static let terms = "https://example.com/terms"
+    static let terms = "https://kingswift429.github.io/bushaoxin/terms.html"
+
+    /// 项目主页（「关于」页展示）
+    static let homepage = "https://github.com/kingswift429/bushaoxin"
 
     // MARK: - 派生
 

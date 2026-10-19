@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>不烧心 · 隐私政策</title>
+<style>
+  :root {
+    --ink: #2B2A28;
+    --sub: #7A7570;
+    --bg: #FBF8F4;
+    --card: #FFFFFF;
+    --line: #EAE4DC;
+    --accent: #D9664A;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.75;
+    font-size: 16px;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 56px 24px 96px; }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 8px;
+  }
+  .dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--accent);
+  }
+  h1 {
+    font-size: 28px; font-weight: 700; margin: 0 0 6px;
+    letter-spacing: -0.01em;
+  }
+  .meta { color: var(--sub); font-size: 14px; margin-bottom: 40px; }
+  h2 {
+    font-size: 19px; font-weight: 650; margin: 40px 0 12px;
+    padding-top: 8px;
+  }
+  p, li { color: #3D3B38; }
+  ul { padding-left: 22px; }
+  li { margin: 7px 0; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin: 20px 0;
+  }
+  .card p:first-child { margin-top: 0; }
+  .card p:last-child { margin-bottom: 0; }
+  .hl {
+    background: #FFF3EF;
+    border-left: 3px solid var(--accent);
+    padding: 14px 18px;
+    border-radius: 0 10px 10px 0;
+    margin: 20px 0;
+  }
+  table {
+    width: 100%; border-collapse: collapse; margin: 16px 0;
+    font-size: 15px;
+  }
+  th, td {
+    text-align: left; padding: 10px 12px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  th { color: var(--sub); font-weight: 600; font-size: 13.5px; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .lang-nav {
+    display: flex; gap: 8px; margin-bottom: 36px; flex-wrap: wrap;
+  }
+  .lang-nav a {
+    padding: 6px 14px; border-radius: 999px;
+    background: var(--card); border: 1px solid var(--line);
+    font-size: 14px; color: var(--sub);
+  }
+  .lang-nav a.active {
+    background: var(--ink); color: #fff; border-color: var(--ink);
+  }
+  section[hidden] { display: none; }
+  footer {
+    margin-top: 64px; padding-top: 24px;
+    border-top: 1px solid var(--line);
+    color: var(--sub); font-size: 13.5px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="brand"><span class="dot"></span><h1>不烧心</h1></div>
+
+  <div class="lang-nav">
+    <a href="#" data-lang="zh" class="active">中文</a>
+    <a href="#" data-lang="en">English</a>
+    <a href="#" data-lang="ja">日本語</a>
+    <a href="#" data-lang="ko">한국어</a>
+  </div>
+
+  <!-- ========================= 中文 ========================= -->
+  <section data-lang="zh">
+    <h1 style="font-size:24px">隐私政策</h1>
+    <div class="meta">最后更新：2026 年 10 月 19 日 · 适用于 iOS 版「不烧心」</div>
+
+    <div class="hl">
+      <strong>一句话总结：</strong>不烧心不收集你的身份信息，不要求注册，
+      没有广告追踪。你的消费记录默认只存在你自己的手机上。
+    </div>
+
+    <h2>1. 我们不收集什么</h2>
+    <p>以下信息我们<strong>完全不收集</strong>：</p>
+    <ul>
+      <li>姓名、手机号、邮箱、身份证号</li>
+      <li>通讯录、短信、通话记录</li>
+      <li>精确地理位置</li>
+      <li>广告标识符（IDFA）—— 我们不接入任何广告 SDK</li>
+      <li>你在其他 App 或网站上的行为</li>
+    </ul>
+
+    <h2>2. 你的数据存在哪里</h2>
+    <table>
+      <tr>
+        <th style="width:38%">数据</th>
+        <th>存储位置</th>
+      </tr>
+      <tr>
+        <td>你的消费记录、犹豫清单、投票</td>
+        <td><strong>仅本机</strong>（iOS 沙盒内的本地数据库），不上传</td>
+      </tr>
+      <tr>
+        <td>你选择的「发到广场」的内容</td>
+        <td>上传到服务器，<strong>不含任何账号标识</strong>，仅存商品名、价格、分类、时间</td>
+      </tr>
+      <tr>
+        <td>会员购买记录</td>
+        <td>由 Apple 处理，我们只收到「是否有效」的布尔值</td>
+      </tr>
+    </table>
+
+    <h2>3. 相册与相机权限</h2>
+    <p>
+      我们申请相册和相机权限，用途只有一项：
+      <strong>从购物截图里识别出商品名和价格，帮你快速填单</strong>。
+    </p>
+    <div class="card">
+      <p><strong>识别过程完全在你的手机上本地完成</strong>，
+      使用 Apple 系统自带的 Vision 文字识别框架。
+      图片<strong>不会</strong>上传到我们的服务器，也不会上传到任何第三方。</p>
+      <p>你可以随时在「设置 → 不烧心 → 照片」里关闭这个权限，
+      之后仍可手动输入商品名和价格，App 其他功能不受影响。</p>
+    </div>
+
+    <h2>4. 广场功能</h2>
+    <p>
+      「广场」展示的是大家主动分享的犹豫决策。如果你选择分享：
+    </p>
+    <ul>
+      <li>只上传商品名、价格、币种、分类和时间</li>
+      <li>不关联你的设备或账号</li>
+      <li>其他人可以对内容投票，但不能看到是谁发的</li>
+    </ul>
+    <p>
+      你可以在「我的 → 拉黑与屏蔽」里屏蔽不想看的内容。
+      每条内容都可以举报，我们会在 24 小时内处理。
+    </p>
+
+    <h2>5. 第三方服务</h2>
+    <table>
+      <tr>
+        <th style="width:38%">服务</th>
+        <th>用途</th>
+        <th>涉及数据</th>
+      </tr>
+      <tr>
+        <td>Apple StoreKit</td>
+        <td>处理会员购买</td>
+        <td>由 Apple 独立处理，我们无法获取你的支付信息</td>
+      </tr>
+      <tr>
+        <td>Supabase</td>
+        <td>存储广场公开内容</td>
+        <td>仅公开的商品名/价格/分类，无个人身份信息</td>
+      </tr>
+    </table>
+    <p>除此之外，App 内不接入任何第三方分析、广告或追踪 SDK。</p>
+
+    <h2>6. 儿童隐私</h2>
+    <p>
+      本 App 不面向 13 岁以下儿童。
+      我们不会有意收集儿童的个人信息。
+      如果发现误收集，请通过下方邮箱联系我们，我们会立即删除。
+    </p>
+
+    <h2>7. 你的权利</h2>
+    <ul>
+      <li><strong>删除全部数据</strong>：在「我的 → 清除全部数据」，本机数据立即永久删除</li>
+      <li><strong>卸载即清除</strong>：删除 App 会同时删除全部本地数据</li>
+      <li><strong>撤回广场分享</strong>：联系客服删除你分享过的内容</li>
+    </ul>
+
+    <h2>8. 数据安全</h2>
+    <p>
+      本机数据存放在 iOS 应用沙盒内，受系统级加密保护。
+      上传到服务器的数据通过 HTTPS 传输。
+      但请注意：没有任何系统能保证绝对安全。
+    </p>
+
+    <h2>9. 政策变更</h2>
+    <p>
+      如果本政策有重要变更，我们会在 App 内提示，并更新本页顶部的日期。
+      继续使用即表示你接受更新后的政策。
+    </p>
+
+    <h2>10. 联系我们</h2>
+    <div class="card">
+      <p>邮箱：<a href="mailto:support@bushaoxin.app">support@bushaoxin.app</a></p>
+      <p>我们通常在 48 小时内回复。</p>
+    </div>
+  </section>
+
+  <!-- ========================= English ========================= -->
+  <section data-lang="en" hidden>
+    <h1 style="font-size:24px">Privacy Policy</h1>
+    <div class="meta">Last updated: October 19, 2026 · For "Cool Head" on iOS</div>
+
+    <div class="hl">
+      <strong>In one sentence:</strong> Cool Head does not collect your identity,
+      does not require an account, and has no ad tracking.
+      Your spending records stay on your own phone by default.
+    </div>
+
+    <h2>1. What we do NOT collect</h2>
+    <ul>
+      <li>Name, phone number, email address, or government ID</li>
+      <li>Contacts, SMS, or call history</li>
+      <li>Precise location</li>
+      <li>Advertising identifier (IDFA) — we include no ad SDKs at all</li>
+      <li>Your activity in other apps or websites</li>
+    </ul>
+
+    <h2>2. Where your data lives</h2>
+    <table>
+      <tr><th style="width:38%">Data</th><th>Storage</th></tr>
+      <tr>
+        <td>Your spending records, wishlist, and votes</td>
+        <td><strong>On device only</strong> (local iOS sandbox database). Never uploaded.</td>
+      </tr>
+      <tr>
+        <td>Items you choose to share to the Plaza</td>
+        <td>Uploaded to our server <strong>with no account identifier</strong> — only product name, price, category, and timestamp.</td>
+      </tr>
+      <tr>
+        <td>Subscription purchases</td>
+        <td>Handled by Apple. We only receive a boolean "is active" value.</td>
+      </tr>
+    </table>
+
+    <h2>3. Photo library and camera access</h2>
+    <p>
+      We request photo and camera access for exactly one purpose:
+      <strong>reading the product name and price from a shopping screenshot</strong>
+      so you can fill in a form quickly.
+    </p>
+    <div class="card">
+      <p><strong>Recognition happens entirely on your device</strong> using Apple's
+      built-in Vision framework. Images are <strong>never</strong> uploaded to our
+      servers or to any third party.</p>
+      <p>You can revoke this permission any time in Settings → Cool Head → Photos.
+      You can still type product names and prices manually, and every other
+      feature continues to work.</p>
+    </div>
+
+    <h2>4. The Plaza</h2>
+    <p>When you share a decision to the Plaza:</p>
+    <ul>
+      <li>Only product name, price, currency, category, and time are uploaded</li>
+      <li>Nothing links the content to you or your device</li>
+      <li>Others can vote on it but cannot see who posted it</li>
+    </ul>
+    <p>
+      You can block unwanted content under Mine → Blocked.
+      Every item can be reported, and we act within 24 hours.
+    </p>
+
+    <h2>5. Third-party services</h2>
+    <table>
+      <tr><th style="width:32%">Service</th><th>Purpose</th><th>Data involved</th></tr>
+      <tr>
+        <td>Apple StoreKit</td>
+        <td>Subscription purchases</td>
+        <td>Handled solely by Apple; we never see your payment details</td>
+      </tr>
+      <tr>
+        <td>Supabase</td>
+        <td>Hosting public Plaza content</td>
+        <td>Public product name/price/category only, no personal identifiers</td>
+      </tr>
+    </table>
+    <p>No other analytics, advertising, or tracking SDK is included.</p>
+
+    <h2>6. Children's privacy</h2>
+    <p>
+      This app is not directed at children under 13. We do not knowingly collect
+      personal information from children. If you believe we have, contact us and
+      we will delete it promptly.
+    </p>
+
+    <h2>7. Your rights</h2>
+    <ul>
+      <li><strong>Delete everything</strong>: Mine → Clear All Data removes local data immediately and permanently</li>
+      <li><strong>Uninstall</strong>: deleting the app deletes all local data</li>
+      <li><strong>Withdraw shared content</strong>: contact support to remove anything you posted</li>
+    </ul>
+
+    <h2>8. Security</h2>
+    <p>
+      Local data lives inside the iOS app sandbox with system-level encryption.
+      Server traffic uses HTTPS. No system can be guaranteed absolutely secure.
+    </p>
+
+    <h2>9. Changes</h2>
+    <p>
+      If we make material changes, we will notify you in-app and update the date
+      at the top of this page.
+    </p>
+
+    <h2>10. Contact</h2>
+    <div class="card">
+      <p>Email: <a href="mailto:support@bushaoxin.app">support@bushaoxin.app</a></p>
+      <p>We usually reply within 48 hours.</p>
+    </div>
+  </section>
+
+  <!-- ========================= 日本語 ========================= -->
+  <section data-lang="ja" hidden>
+    <h1 style="font-size:24px">プライバシーポリシー</h1>
+    <div class="meta">最終更新：2026年10月19日 · iOS版「ひと息」</div>
+
+    <div class="hl">
+      <strong>ひと言で：</strong>「ひと息」は個人情報を収集せず、会員登録も不要、
+      広告トラッキングもありません。支出記録は初期設定でご自身の端末にのみ保存されます。
+    </div>
+
+    <h2>1. 収集しない情報</h2>
+    <ul>
+      <li>氏名・電話番号・メールアドレス・身分証明書番号</li>
+      <li>連絡先・SMS・通話履歴</li>
+      <li>正確な位置情報</li>
+      <li>広告識別子（IDFA）— 広告SDKは一切組み込んでいません</li>
+      <li>他のアプリやウェブサイトでの行動</li>
+    </ul>
+
+    <h2>2. データの保存場所</h2>
+    <table>
+      <tr><th style="width:38%">データ</th><th>保存場所</th></tr>
+      <tr>
+        <td>支出記録・検討リスト・投票</td>
+        <td><strong>端末内のみ</strong>（iOSサンドボックス内のローカルDB）。アップロードしません。</td>
+      </tr>
+      <tr>
+        <td>「広場」に共有した内容</td>
+        <td>サーバーへ送信しますが<strong>アカウント識別子は含みません</strong>。商品名・価格・カテゴリ・時刻のみ。</td>
+      </tr>
+      <tr>
+        <td>プレミアム購入履歴</td>
+        <td>Appleが処理。当方は「有効かどうか」の真偽値のみ受け取ります。</td>
+      </tr>
+    </table>
+
+    <h2>3. 写真とカメラの権限</h2>
+    <p>
+      写真・カメラの権限を求める目的はただ一つ、
+      <strong>買い物のスクリーンショットから商品名と価格を読み取り、
+      入力の手間を省くこと</strong>です。
+    </p>
+    <div class="card">
+      <p><strong>認識処理はすべて端末内で完結します</strong>（Apple純正のVisionフレームワーク）。
+      画像が当方のサーバーや第三者へ<strong>送信されることはありません</strong>。</p>
+      <p>「設定 → ひと息 → 写真」でいつでも許可を取り消せます。
+      その後も手入力で商品名・価格を入力でき、他の機能は影響を受けません。</p>
+    </div>
+
+    <h2>4. 広場機能</h2>
+    <p>広場へ共有した場合：</p>
+    <ul>
+      <li>商品名・価格・通貨・カテゴリ・時刻のみ送信</li>
+      <li>端末やアカウントと紐づきません</li>
+      <li>他のユーザーは投票できますが、投稿者は分かりません</li>
+    </ul>
+    <p>
+      「マイページ → ブロック」で不要なコンテンツを非表示にできます。
+      各項目は通報でき、24時間以内に対応します。
+    </p>
+
+    <h2>5. 第三者サービス</h2>
+    <table>
+      <tr><th style="width:32%">サービス</th><th>用途</th><th>扱うデータ</th></tr>
+      <tr>
+        <td>Apple StoreKit</td>
+        <td>プレミアム購入</td>
+        <td>Appleが単独処理。支払い情報は当方に届きません</td>
+      </tr>
+      <tr>
+        <td>Supabase</td>
+        <td>広場の公開コンテンツ保存</td>
+        <td>公開された商品名・価格・カテゴリのみ。個人識別情報なし</td>
+      </tr>
+    </table>
+    <p>その他の解析・広告・トラッキングSDKは組み込んでいません。</p>
+
+    <h2>6. 子どものプライバシー</h2>
+    <p>
+      本アプリは13歳未満を対象としていません。子どもの個人情報を意図的に収集することはありません。
+      誤って収集した場合はご連絡ください。速やかに削除します。
+    </p>
+
+    <h2>7. ユーザーの権利</h2>
+    <ul>
+      <li><strong>全データ削除</strong>：「マイページ → すべてのデータを消去」で端末内データを即時かつ完全に削除</li>
+      <li><strong>アンインストール</strong>：アプリを削除するとローカルデータも消えます</li>
+      <li><strong>共有の撤回</strong>：サポートへ連絡いただければ削除します</li>
+    </ul>
+
+    <h2>8. セキュリティ</h2>
+    <p>
+      端末内データはiOSアプリサンドボックス内でシステムレベルの暗号化により保護されます。
+      サーバー通信はHTTPSです。ただし完全な安全性を保証できるシステムはありません。
+    </p>
+
+    <h2>9. ポリシーの変更</h2>
+    <p>
+      重要な変更がある場合はアプリ内で通知し、本ページ上部の日付を更新します。
+    </p>
+
+    <h2>10. お問い合わせ</h2>
+    <div class="card">
+      <p>メール：<a href="mailto:support@bushaoxin.app">support@bushaoxin.app</a></p>
+      <p>通常48時間以内に返信します。</p>
+    </div>
+  </section>
+
+  <!-- ========================= 한국어 ========================= -->
+  <section data-lang="ko" hidden>
+    <h1 style="font-size:24px">개인정보 처리방침</h1>
+    <div class="meta">최종 수정: 2026년 10월 19일 · iOS용 「한숨」</div>
+
+    <div class="hl">
+      <strong>한 줄 요약:</strong> 「한숨」은 신원 정보를 수집하지 않고,
+      회원가입이 필요 없으며, 광고 추적이 없습니다.
+      소비 기록은 기본적으로 사용자의 기기에만 저장됩니다.
+    </div>
+
+    <h2>1. 수집하지 않는 정보</h2>
+    <ul>
+      <li>이름, 전화번호, 이메일, 주민등록번호</li>
+      <li>연락처, 문자, 통화 기록</li>
+      <li>정확한 위치 정보</li>
+      <li>광고 식별자(IDFA) — 광고 SDK를 전혀 포함하지 않습니다</li>
+      <li>다른 앱이나 웹사이트에서의 활동</li>
+    </ul>
+
+    <h2>2. 데이터 저장 위치</h2>
+    <table>
+      <tr><th style="width:38%">데이터</th><th>저장 위치</th></tr>
+      <tr>
+        <td>소비 기록, 고민 목록, 투표</td>
+        <td><strong>기기 내부에만</strong> 저장(iOS 샌드박스 로컬 DB). 업로드하지 않습니다.</td>
+      </tr>
+      <tr>
+        <td>광장에 공유한 항목</td>
+        <td>서버로 전송되지만 <strong>계정 식별자가 포함되지 않습니다</strong>. 상품명, 가격, 카테고리, 시각만 저장.</td>
+      </tr>
+      <tr>
+        <td>멤버십 구매 기록</td>
+        <td>Apple이 처리합니다. 당사는 "유효 여부"의 참/거짓 값만 받습니다.</td>
+      </tr>
+    </table>
+
+    <h2>3. 사진 및 카메라 권한</h2>
+    <p>
+      사진·카메라 권한을 요청하는 목적은 단 하나,
+      <strong>쇼핑 스크린샷에서 상품명과 가격을 읽어 입력을 줄이는 것</strong>입니다.
+    </p>
+    <div class="card">
+      <p><strong>인식은 전부 기기 안에서 완료됩니다</strong>(Apple 기본 Vision 프레임워크).
+      이미지는 당사 서버나 제3자에게 <strong>절대</strong> 전송되지 않습니다.</p>
+      <p>「설정 → 한숨 → 사진」에서 언제든 권한을 취소할 수 있습니다.
+      이후에도 직접 입력할 수 있고 다른 기능은 그대로 작동합니다.</p>
+    </div>
+
+    <h2>4. 광장 기능</h2>
+    <p>광장에 공유하는 경우:</p>
+    <ul>
+      <li>상품명, 가격, 통화, 카테고리, 시각만 전송됩니다</li>
+      <li>기기나 계정과 연결되지 않습니다</li>
+      <li>다른 사용자는 투표할 수 있지만 작성자는 알 수 없습니다</li>
+    </ul>
+    <p>
+      「내 정보 → 차단 목록」에서 원하지 않는 콘텐츠를 숨길 수 있습니다.
+      모든 항목은 신고할 수 있으며 24시간 내에 처리합니다.
+    </p>
+
+    <h2>5. 제3자 서비스</h2>
+    <table>
+      <tr><th style="width:32%">서비스</th><th>용도</th><th>관련 데이터</th></tr>
+      <tr>
+        <td>Apple StoreKit</td>
+        <td>멤버십 구매</td>
+        <td>Apple이 단독 처리. 결제 정보는 당사에 전달되지 않습니다</td>
+      </tr>
+      <tr>
+        <td>Supabase</td>
+        <td>광장 공개 콘텐츠 저장</td>
+        <td>공개된 상품명/가격/카테고리만. 개인 식별 정보 없음</td>
+      </tr>
+    </table>
+    <p>그 외 분석·광고·추적 SDK는 포함하지 않습니다.</p>
+
+    <h2>6. 아동의 개인정보</h2>
+    <p>
+      본 앱은 만 13세 미만 아동을 대상으로 하지 않습니다.
+      아동의 개인정보를 의도적으로 수집하지 않습니다.
+      수집된 사실을 발견하면 알려 주시면 즉시 삭제합니다.
+    </p>
+
+    <h2>7. 사용자의 권리</h2>
+    <ul>
+      <li><strong>전체 데이터 삭제</strong>: 「내 정보 → 모든 데이터 삭제」로 기기 내 데이터를 즉시 영구 삭제</li>
+      <li><strong>앱 삭제</strong>: 앱을 지우면 로컬 데이터도 삭제됩니다</li>
+      <li><strong>공유 철회</strong>: 고객센터로 연락하시면 삭제해 드립니다</li>
+    </ul>
+
+    <h2>8. 보안</h2>
+    <p>
+      기기 내 데이터는 iOS 앱 샌드박스 안에서 시스템 수준 암호화로 보호됩니다.
+      서버 통신은 HTTPS를 사용합니다. 다만 완전한 안전을 보장할 수 있는 시스템은 없습니다.
+    </p>
+
+    <h2>9. 방침 변경</h2>
+    <p>
+      중요한 변경이 있으면 앱 내에서 알리고 본 페이지 상단의 날짜를 갱신합니다.
+    </p>
+
+    <h2>10. 문의</h2>
+    <div class="card">
+      <p>이메일: <a href="mailto:support@bushaoxin.app">support@bushaoxin.app</a></p>
+      <p>보통 48시간 이내에 답변드립니다.</p>
+    </div>
+  </section>
+
+  <footer>
+    © 2026 不烧心 / Cool Head · <a href="./terms.html">服务条款</a> ·
+    <a href="https://github.com/kingswift429/bushaoxin">开源仓库</a>
+  </footer>
+
+</div>
+
+<script>
+  // 极简语言切换。默认按浏览器语言自动选，用户点过之后记住选择。
+  (function () {
+    const links = document.querySelectorAll('.lang-nav a');
+    const sections = document.querySelectorAll('section[data-lang]');
+
+    function show(lang) {
+      sections.forEach(s => { s.hidden = s.dataset.lang !== lang; });
+      links.forEach(a => a.classList.toggle('active', a.dataset.lang === lang));
+      document.documentElement.lang = lang === 'zh' ? 'zh-CN'
+        : lang === 'ja' ? 'ja' : lang === 'ko' ? 'ko' : 'en';
+      try { localStorage.setItem('privacy-lang', lang); } catch (e) {}
+    }
+
+    links.forEach(a => {
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        show(a.dataset.lang);
+      });
+    });
+
+    let saved = null;
+    try { saved = localStorage.getItem('privacy-lang'); } catch (e) {}
+    if (saved) {
+      show(saved);
+    } else {
+      const nav = (navigator.language || 'en').toLowerCase();
+      if (nav.startsWith('zh')) show('zh');
+      else if (nav.startsWith('ja')) show('ja');
+      else if (nav.startsWith('ko')) show('ko');
+      else show('en');
+    }
+  })();
+</script>
+</body>
+</html>
