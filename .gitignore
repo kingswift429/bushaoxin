@@ -44,3 +44,7 @@ node_modules/
 *.mobileprovision
 AuthKey_*.p8
 .env
+
+# 构建/安装日志
+verify/*.log
+verify/*.log.err
