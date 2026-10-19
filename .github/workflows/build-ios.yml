@@ -1,0 +1,154 @@
+name: Build iOS
+
+# 为什么有这个文件：
+#   开发机是 Windows，装不了 Xcode。
+#   GitHub Actions 提供 macOS runner，在云端真正跑 xcodebuild ——
+#   等于不用买 Mac 也能编译、甚至上架 TestFlight。
+#
+# 前提：**本文件所在的 bushaoxin 目录就是仓库根**。
+#   也就是 project.yml / Bushaoxin/ / docs/ 都在仓库第一层。
+#   如果你改了目录层级，下面的所有路径都要跟着改。
+#
+# 用法：
+#   1. 在本目录 git init && git add . && git commit && git push
+#   2. 打开仓库 Actions 页，选 "Build iOS"，点 Run workflow
+#   3. 编译错误会显示在日志的「编译错误汇总」里
+#
+# 私有仓库注意：macOS runner 按 10 倍消耗配额，
+# 免费额度 2000 分钟/月 ≈ 200 分钟 macOS，约够编译 20 次。
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build (macOS)
+    runs-on: macos-15
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: |
+          xcodebuild -version
+          swift --version
+          xcodebuild -showsdks | grep -i simulator
+
+      # XcodeGen 的版本会影响生成的 pbxproj 格式，固定版本便于复现问题。
+      - name: Install XcodeGen
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+          HOMEBREW_NO_INSTALL_CLEANUP: "1"
+        run: |
+          brew install xcodegen
+          xcodegen --version
+
+      - name: Generate Xcode project
+        run: |
+          xcodegen generate --spec project.yml
+          # 关键：确认 .xcodeproj 真的生成了，否则后面的 xcodebuild 会报
+          # "does not exist"，而不是给出编译错误。
+          test -f Bushaoxin.xcodeproj/project.pbxproj || {
+            echo "::error::xcodegen 没有生成 Bushaoxin.xcodeproj/project.pbxproj"
+            exit 1
+          }
+          echo "--- 源文件是否都被收进工程 ---"
+          grep -c "\.swift" Bushaoxin.xcodeproj/project.pbxproj || true
+
+      - name: Show scheme
+        run: |
+          xcodebuild -list -project Bushaoxin.xcodeproj
+          # 关键：scheme 不存在时，xcodebuild 会返回 0 但什么都不编译！
+          # 这里提前硬性校验，避免「假装编译成功」。
+          xcodebuild -list -project Bushaoxin.xcodeproj -json \
+            | python3 -c 'import json,sys; d=json.load(sys.stdin); p=d["project"]; print("schemes:",p["schemes"]); sys.exit(0 if "Bushaoxin" in p["schemes"] else 1)' \
+            || { echo "::error::没有名为 Bushaoxin 的 scheme，检查 project.yml 的 target 名"; exit 1; }
+
+      - name: Build
+        shell: bash
+        run: |
+          # GitHub 用 `bash -e` 执行本步骤，xcodebuild 一旦失败就会立刻退出，
+          # 下面的错误汇总永远执行不到。所以这里先关掉 -e，自己判断退出码。
+          set +e
+          set -o pipefail
+
+          xcodebuild build \
+            -project Bushaoxin.xcodeproj \
+            -scheme Bushaoxin \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Debug \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            > build.log 2>&1
+          BUILD_STATUS=$?
+
+          echo "=========================================="
+          echo "编译错误汇总（最多 100 行）："
+          echo "=========================================="
+          # 用 `if grep -q ...; then 打印; else 提示; fi`，不要用 `grep ... || echo`：
+          # 在 pipefail 下，sort/head 任何一段异常都会让 || 分支误报「无 error」，
+          # 真的编译失败时反而告诉你看不到错误。先 -q 判断有没有匹配，再打印。
+          if grep -qE "error:" build.log; then
+            grep -E "error:" build.log | sort -u | head -100
+          else
+            echo "（日志中无 error: 行）"
+          fi
+
+          echo ""
+          echo "=========================================="
+          echo "编译警告汇总（最多 40 行）："
+          echo "=========================================="
+          if grep -qE "warning:" build.log; then
+            grep -E "warning:" build.log | sort -u | head -40
+          else
+            echo "（日志中无 warning: 行）"
+          fi
+
+          echo ""
+          echo "日志尾部 60 行："
+          tail -60 build.log
+
+          # 先判编译退出码，再做产物校验。
+          # 顺序不能反：编译失败时本来就不会有 .app，
+          # 若先查产物，会以"没有 .app"退出，把真实的 xcodebuild 错误码盖掉。
+          if [ "$BUILD_STATUS" -ne 0 ]; then
+            echo "::error::编译失败（xcodebuild exit $BUILD_STATUS），见上方错误汇总"
+            exit "$BUILD_STATUS"
+          fi
+
+          # 产物校验：退出码为 0 不代表真的编出了东西（scheme 为空时会空跑）。
+          APP=$(find build/Build/Products -name "*.app" -maxdepth 3 2>/dev/null | head -1)
+          if [ -z "$APP" ]; then
+            echo "::error::xcodebuild 返回 0 但没有找到 .app 产物 —— 编译并未真正执行"
+            exit 1
+          fi
+
+          echo "::notice::产物：$APP"
+          ls -la "$APP" | head -20
+          test -f "$APP/Info.plist" && echo "Info.plist 存在" \
+            || echo "::warning::产物里没有 Info.plist"
+          test -f "$APP/PrivacyInfo.xcprivacy" && echo "PrivacyInfo.xcprivacy 已打包" \
+            || echo "::warning::PrivacyInfo.xcprivacy 没有被打包进 App"
+          test -f "$APP/Assets.car" && echo "Assets.car 已打包" \
+            || echo "::warning::没有 Assets.car（AppIcon/AccentColor 可能没生效）"
+
+          echo "::notice::编译成功"
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: |
+            build.log
+            Bushaoxin/Info.plist
+          if-no-files-found: warn
+          retention-days: 7

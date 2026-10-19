@@ -1,0 +1,60 @@
+# 不烧心 · XcodeGen 工程配置
+# 用法：在本目录执行 `xcodegen generate`，然后 open Bushaoxin.xcodeproj
+
+name: Bushaoxin
+
+options:
+  bundleIdPrefix: com.yourteam
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    DEVELOPMENT_TEAM: YOUR_TEAM_ID_HERE
+    CODE_SIGN_STYLE: Automatic
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SUPPORTS_MACCATALYST: NO
+    # 只出 iPhone 版；iPad 需要单独适配布局
+    TARGETED_DEVICE_FAMILY: "1"
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+
+targets:
+  Bushaoxin:
+    type: application
+    platform: iOS
+    sources:
+      - path: Bushaoxin
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.yourteam.bushaoxin
+        # 必须关掉。下面的 info: 块已经生成 Info.plist，
+        # 两者同时开启会冲突（同一份 plist 被生成两次）。
+        GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        # 多语言：简体中文为源语言，英/日/韩为译文
+        DEVELOPMENT_LANGUAGE: zh-Hans
+        # 注意：没有 KNOWN_REGIONS 这个 build setting。
+        # 真正决定多语言的是下面 info.properties.CFBundleLocalizations。
+    info:
+      path: Bushaoxin/Info.plist
+      properties:
+        CFBundleDisplayName: 不烧心
+        NSPhotoLibraryUsageDescription: "用来从购物截图里自动识别商品名和价格，快速发起审批。"
+        NSCameraUsageDescription: "用来拍摄价签或商品页，自动填入审批单。"
+        # 只用 URLSession 走 HTTPS 标准加密，属于豁免情形。
+        # 不声明的话，每次上传 TestFlight 都会被问一遍。
+        ITSAppUsesNonExemptEncryption: false
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        # 声明支持的语言，App Store 会据此展示「支持中文/英语/日语/韩语」
+        CFBundleLocalizations:
+          - zh-Hans
+          - en
+          - ja
+          - ko

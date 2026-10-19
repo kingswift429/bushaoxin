@@ -1,0 +1,46 @@
+# XcodeGen 生成的工程 —— 每次 generate 都重新生成，且 .pbxproj 的 UUID 每次都变，
+# 提交进来只会产生巨大且无意义的 diff。
+Bushaoxin.xcodeproj/
+*.xcodeproj/
+
+# 构建产物
+build/
+DerivedData/
+build.log
+*.app
+*.ipa
+*.dSYM.zip
+
+# Xcode 用户级状态
+*.xcuserstate
+xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+
+# macOS 垃圾文件
+.DS_Store
+._*
+
+# 本地产物 / 临时下载
+verify/*.exe
+verify/*.zip
+verify/*.tar.gz
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# 依赖与编辑器
+Pods/
+node_modules/
+.vscode/
+.idea/
+
+# 密钥类（绝不能进仓库）
+*.p8
+*.p12
+*.mobileprovision
+AuthKey_*.p8
+.env
