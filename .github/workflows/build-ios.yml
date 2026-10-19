@@ -150,5 +150,6 @@ jobs:
           path: |
             build.log
             Bushaoxin/Info.plist
-          if-no-files-found: warn
+          # Info.plist 由 xcodegen 生成，编译前几步失败时不存在，属正常
+          if-no-files-found: ignore
           retention-days: 7

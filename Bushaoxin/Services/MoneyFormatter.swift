@@ -31,6 +31,23 @@ enum MoneyFormatter {
         return f.string(from: NSDecimalNumber(decimal: value)) ?? "\(value)"
     }
 
+    /// 写回**输入框**的格式。
+    ///
+    /// 和 plainNumber 的区别：不加千分位分隔符。
+    /// 输入框里出现 `1,299` 会让用户在中间插光标编辑后得到非预期结果，
+    /// 而且德语区的千分位是 `.`，和它的小数点 `,` 混在一起极易解析错。
+    ///
+    /// 只保留当前地区的小数点符号（德语 `9,99` / 中文 `9.99`），不带千分位。
+    static func inputText(_ value: Decimal, locale: Locale = .current) -> String {
+        let f = NumberFormatter()
+        f.numberStyle = .decimal
+        f.locale = locale
+        f.usesGroupingSeparator = false
+        f.maximumFractionDigits = 2
+        f.minimumFractionDigits = 0
+        return f.string(from: NSDecimalNumber(decimal: value)) ?? "\(value)"
+    }
+
     /// 币种符号，单独展示用
     static func symbol(for code: String, locale: Locale = .current) -> String {
         let f = NumberFormatter()

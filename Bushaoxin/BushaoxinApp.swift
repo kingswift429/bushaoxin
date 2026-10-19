@@ -58,11 +58,17 @@ struct RootView: View {
             }
             // 校正会员状态：用户可能在别的设备上买过
             await PurchaseService.shared.refreshEntitlement()
+            // 补发离线期间攒下的举报。
+            // 不在这里重试的话，用户离线举报后永远不会被上报 ——
+            // 而举报是 UGC 审核要求的义务，不能只依赖用户"再举报一次"触发。
+            await ReportService.shared.flush(context: context)
         }
         .onChange(of: scenePhase) { _, phase in
-            // 回前台时重新校验：用户可能刚在系统设置里取消或续订
             if phase == .active {
+                // 回前台时重新校验：用户可能刚在系统设置里取消或续订
                 Task { await PurchaseService.shared.refreshEntitlement() }
+                // 网络恢复后补发举报
+                Task { await ReportService.shared.flush(context: context) }
             }
         }
     }

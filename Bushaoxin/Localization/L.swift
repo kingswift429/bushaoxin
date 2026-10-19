@@ -76,6 +76,17 @@ enum L {
     }
     static var reasonHint: String { String(localized: "field.reasonHint") }
 
+    // MARK: 消费分类
+    // 这 6 条必须写成字面量：Xcode 的 String Catalog 靠扫描
+    // String(localized: 字面量) 的形式来提取 key，传变量会让它
+    // 在 Catalog 里找不到对应项（运行期仍能查到，但编辑器会标黄）。
+    static var categoryDining: String { String(localized: "category.dining") }
+    static var categoryFashion: String { String(localized: "category.fashion") }
+    static var categoryDigital: String { String(localized: "category.digital") }
+    static var categoryGame: String { String(localized: "category.game") }
+    static var categorySports: String { String(localized: "category.sports") }
+    static var categoryOther: String { String(localized: "category.other") }
+
     // MARK: 冷静期
     static var cooldownTitle: String { String(localized: "cooldown.title") }
     static var cooldown2h: String { String(localized: "cooldown.2h") }

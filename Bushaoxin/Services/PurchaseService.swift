@@ -28,9 +28,14 @@ final class PurchaseService {
 
     init() {
         // 监听交易更新：续订、退款、家庭共享都会从这里进来。
-        // 注意：这里不能用 `guard let self else { return }`，
-        // 那会让 for-await 循环在 self 释放时永久退出，之后再也收不到交易更新。
-        updatesTask = Task(priority: .background) {
+        //
+        // 两个关键点：
+        // 1. 不能用 `guard let self else { return }` —— 那会让 for-await 循环
+        //    在 self 释放时永久退出，之后再也收不到交易更新。
+        // 2. 不要用 .background 优先级：handle 是 @MainActor，
+        //    退款/撤销这类事件被排到后台会延迟处理，
+        //    表现就是"用户已经退款了但会员还在"——这是收入漏洞。
+        updatesTask = Task(priority: .userInitiated) { @MainActor in
             for await result in Transaction.updates {
                 await PurchaseService.shared.handle(result)
             }

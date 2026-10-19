@@ -40,6 +40,10 @@ targets:
         DEVELOPMENT_LANGUAGE: zh-Hans
         # 注意：没有 KNOWN_REGIONS 这个 build setting。
         # 真正决定多语言的是下面 info.properties.CFBundleLocalizations。
+    # 注意：Bushaoxin/Info.plist 这个文件在仓库里**故意不存在**。
+    # XcodeGen 会根据下面的 properties 自动生成它（GENERATE_INFOPLIST_FILE 已关闭）。
+    # 如果手工建了这个文件，反而会和 XcodeGen 的生成产物冲突，
+    # 报 "Multiple commands produce .../Info.plist"。
     info:
       path: Bushaoxin/Info.plist
       properties:

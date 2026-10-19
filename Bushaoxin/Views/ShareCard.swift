@@ -139,11 +139,22 @@ enum ShareCardRenderer {
     ///
     /// 用 ImageRenderer（iOS 16+），支持深色/浅色外的完整样式，
     /// 且不依赖把视图挂到窗口上。
+    ///
+    /// **必须设置 proposedSize**：
+    /// 卡片里有 fixedSize 和自动换行的多行文本，不给建议尺寸时
+    /// ImageRenderer 可能量不出高度，`uiImage` 直接返回 nil ——
+    /// 表现就是"点分享没反应"，而且没有任何报错，极难排查。
     @MainActor
-    static func render(_ view: some View, scale: CGFloat = 3) -> UIImage? {
+    static func render(
+        _ view: some View,
+        width: CGFloat = 340,
+        scale: CGFloat = 3
+    ) -> UIImage? {
         let renderer = ImageRenderer(content: view)
         renderer.scale = scale
         renderer.isOpaque = true
+        // 宽度固定、高度自适应（卡片是竖版流式布局）
+        renderer.proposedSize = ProposedViewSize(width: width, height: nil)
         return renderer.uiImage
     }
 }

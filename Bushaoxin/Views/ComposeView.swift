@@ -373,11 +373,11 @@ struct ComposeView: View {
 
         if let g = parsed.goods, goods.isEmpty { goods = g }
         if let p = parsed.price {
-            // 用 Decimal 精确转换，避免 1299.99 这类价格被浮点吃掉精度
+            // 用 Decimal 精确转换，避免 1299.99 这类价格被浮点吃掉精度。
+            // 写回输入框时必须按**当前地区**格式化：德语区要写 "9,99" 而不是 "9.99"，
+            // 否则用户看到的小数点和 MoneyFormatter.parse 认的不一致，一编辑就变成 999。
             let dec = Decimal(string: String(p)) ?? 0
-            let ns = NSDecimalNumber(decimal: dec)
-            priceText = ns.doubleValue.truncatingRemainder(dividingBy: 1) == 0
-                ? "\(ns.intValue)" : ns.stringValue
+            priceText = MoneyFormatter.inputText(dec)
         }
         // 识别到外币符号时自动切换记账币种（原产品爆火后紧急补的功能）
         if let code = parsed.currencyCode {

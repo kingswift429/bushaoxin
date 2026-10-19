@@ -197,18 +197,18 @@ enum SpendCategory: String, CaseIterable, Identifiable {
         self.init(rawValue: key)
     }
 
+    /// 显示名。
+    /// 走 L 里显式声明的字面量 key，而不是动态拼字符串 ——
+    /// 这样 Xcode 的 String Catalog 能在编译期识别到这些 key，
+    /// 切换语言时历史数据也不会变成另一种语言的乱码。
     var localizedName: String {
-        String(localized: LocalizedStringResource(stringLiteral: nameKey))
-    }
-
-    private var nameKey: String {
         switch self {
-        case .dining: return "category.dining"
-        case .fashion: return "category.fashion"
-        case .digital: return "category.digital"
-        case .game: return "category.game"
-        case .sports: return "category.sports"
-        case .other: return "category.other"
+        case .dining: return L.categoryDining
+        case .fashion: return L.categoryFashion
+        case .digital: return L.categoryDigital
+        case .game: return L.categoryGame
+        case .sports: return L.categorySports
+        case .other: return L.categoryOther
         }
     }
 
