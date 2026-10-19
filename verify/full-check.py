@@ -76,11 +76,13 @@ for u in unbalanced:
 required = [
     "project.yml",
     ".gitignore",
+    ".gitattributes",
     ".github/workflows/build-ios.yml",
     "Bushaoxin/Assets.xcassets/AppIcon.appiconset/icon-1024.png",
     "Bushaoxin/Assets.xcassets/AppIcon.appiconset/Contents.json",
     "Bushaoxin/Assets.xcassets/AccentColor.colorset/Contents.json",
     "Bushaoxin/PrivacyInfo.xcprivacy",
+    "Bushaoxin/Services/AppLinks.swift",
     "docs/supabase_schema.sql",
 ]
 missing_files = [r for r in required if not os.path.exists(os.path.join(root, r))]

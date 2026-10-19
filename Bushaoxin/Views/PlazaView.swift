@@ -25,24 +25,15 @@ struct PlazaView: View {
     }
 
     var body: some View {
-        // 只算一次：page / 空态 / hasMore 都要用，重复求值会三倍开销
-        let list = sorted
-        return ScrollView {
+        ScrollView {
             LazyVStack(spacing: 12) {
                 header
                 slogan
 
-                if list.isEmpty {
-                    emptyState
-                } else {
-                    ForEach(Array(list.prefix(visibleCount))) { app in
-                        ApprovalCard(app: app)
-                    }
-
-                    if visibleCount < list.count {
-                        loadMoreButton
-                    }
-                }
+                // sorted 是 computed property，每次访问都会重新过滤排序。
+                // 在 ForEach 里反复访问会重复计算，所以这里用 Group 包一层，
+                // 保持单表达式 body（@ViewBuilder 下最稳），避免类型推断问题。
+                content
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 24)
@@ -50,6 +41,24 @@ struct PlazaView: View {
         .scrollIndicators(.hidden)
         .background(Theme.bg)
         .refreshable { await refresh() }
+    }
+
+    /// 列表主体。抽成独立的 @ViewBuilder 属性，
+    /// 这样 body 保持单表达式，深层嵌套也不会让类型推断超时。
+    @ViewBuilder
+    private var content: some View {
+        let list = sorted
+        if list.isEmpty {
+            emptyState
+        } else {
+            ForEach(Array(list.prefix(visibleCount))) { app in
+                ApprovalCard(app: app)
+            }
+
+            if visibleCount < list.count {
+                loadMoreButton
+            }
+        }
     }
 
     private var loadMoreButton: some View {

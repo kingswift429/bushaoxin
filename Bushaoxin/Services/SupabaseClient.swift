@@ -10,7 +10,11 @@ enum SupabaseConfig {
     static let anonKey = "YOUR_ANON_PUBLIC_KEY"
 
     static var isConfigured: Bool {
-        !anonKey.hasPrefix("YOUR_") && !url.host!.contains("YOUR_PROJECT_REF")
+        guard !anonKey.hasPrefix("YOUR_") else { return false }
+        // 不用 url.host! —— URL 解析异常时 host 为 nil 会直接崩溃。
+        // 配置缺失只应导致"后端不可用"，绝不该让 App 起不来。
+        guard let host = url.host else { return false }
+        return !host.contains("YOUR_PROJECT_REF")
     }
 }
 

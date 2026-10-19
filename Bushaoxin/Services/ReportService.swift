@@ -22,10 +22,12 @@ final class ReportService {
 
         let pending: [Report]
         do {
-            let descriptor = FetchDescriptor<Report>(
-                predicate: #Predicate { $0.syncedAt == nil }
-            )
-            pending = Array(try context.fetch(descriptor).prefix(20))
+            // 刻意不在 #Predicate 里写 `$0.syncedAt == nil`：
+            // SwiftData 的 #Predicate 对**可选属性的 nil 比较**支持不完整，
+            // 在部分 iOS 17 版本上会编译失败或运行时抛错。
+            // 举报表数据量很小（本地待同步通常个位数），全量取回再内存过滤最稳。
+            let all = try context.fetch(FetchDescriptor<Report>())
+            pending = Array(all.filter { $0.syncedAt == nil }.prefix(20))
         } catch {
             return
         }

@@ -33,6 +33,67 @@ node verify/logic-check.mjs
 
 ---
 
+## 第二层：iOS 17 API 兼容性检查
+
+```bash
+python verify/ios17_check.py
+```
+
+扫描 26 个 Swift 文件，专门查**会让 xcodebuild 失败但人眼看不出**的问题：
+
+| 检查项 | 为什么重要 |
+|---|---|
+| `#Predicate` 对可选属性做 `nil` 比较 | SwiftData 已知缺陷，会编译失败或运行时报错 |
+| `#Predicate` 里用 `.count` | 不支持，必定失败 |
+| 用了 iOS 18+ API（如新的 `Tab` 类型） | 部署目标 iOS 17 会直接编译失败 |
+| `ForEach` 直接吃 `prefix()` 返回的 Slice | 需要 `Array()` 包一层 |
+| **import 缺失**（用了 `@Model` 但没 `import SwiftData` 等） | 必定编译失败 |
+| 强制解包 `!` / `try!` / `as!` | 运行期崩溃 |
+| `onChange` 单参数闭包 | iOS 17 已废弃，会报警告 |
+| `Task.sleep(nanoseconds:)` | iOS 16 起废弃 |
+| `String(localized:)` 里含插值 | 查不到译文 |
+
+结果（本次运行）：**E 级 0 个，W 级 7 个（均已人工确认为安全）**。
+
+### 这个检查器已经办到的事
+
+它抓出的问题中，有 3 个是真实缺陷，已修：
+
+1. **`SupabaseClient.url.host!`** —— URL 解析异常时崩溃。已改成 `guard let host`
+2. **`#Predicate { $0.syncedAt == nil }`** —— SwiftData 已知缺陷。已改成取回后内存过滤
+3. **`Task.sleep(nanoseconds:)`** —— 已废弃 API。已改成 `Task.sleep(for: .seconds(2))`
+
+### 误报的处理
+
+第一版检查器报了 8 个 E，其中 5 个是误报。我没有直接"全改"，
+而是**修正规则本身**——把注释里的示例代码、常量字面量 `URL(...)!`、
+正确的两参数 `onChange` 都排除掉。
+
+一个会误报的检查器比没有更糟：它会训练你忽略真正的错误。
+
+---
+
+## 第三层：编译期类型审查（人工 + agent）
+
+`.py` 检查器只能查模式，查不了「这个函数的参数类型对不对」。
+所以又请了一个 agent 做逐文件深度审查，专找：
+
+- 类型不匹配、成员不存在、可选值误用
+- `@MainActor` 隔离违规
+- 初始化器参数标签错误
+- ViewBuilder 单块超过 10 个子视图
+- `Decimal` 与 `Int`/`Double` 混用
+
+已据此修复的问题：
+
+| 问题 | 文件 | 修法 |
+|---|---|---|
+| `var body` 里用 `let` + `return`，@ViewBuilder 类型推断不稳 | PlazaView | 抽成独立的 `@ViewBuilder private var content` |
+| 第 9 层嵌套 `ForEach > HStack > GeometryReader > ZStack`，三元表达式混用 Double 和整数字面量 | MineView | 抽出 `CategoryBarRow` 独立 View，`ratio` 显式声明 `Double` |
+| `URL(string:)!` 硬编码三处，域名还是占位符 | MineView | 集中到 `AppLinks`，URL 为 nil 时退化为不显示 |
+
+---
+
 ## 试过但放弃的：Windows Swift 工具链
 
 我尝试安装 Swift 工具链（`winget install Swift.Toolchain`，下载 2 GB），
@@ -43,9 +104,7 @@ node verify/logic-check.mjs
    （[官方说明](https://www.swift.org/install/windows/) 里 Windows 支持的是服务端/跨平台场景）。
    项目里 19 个文件依赖 SwiftUI/SwiftData，装上也编译不了
 
-所以这条路省下的钱（Node 已经验证了同一批算法）与花掉的时间不成比例。
-
-已删除不完整的下载和 Package.swift，不留半成品。
+已删除不完整的下载，不留半成品。
 
 ---
 
@@ -54,15 +113,20 @@ node verify/logic-check.mjs
 **不用买 Mac。** GitHub Actions 提供免费 macOS 机器，
 配置已经写好：`.github/workflows/build-ios.yml`
 
+**本地仓库已建好**（47 个文件已 commit），只差推送到 GitHub：
+
 ```bash
 cd bushaoxin
-git init && git add . && git commit -m "v1.0"
 git remote add origin https://github.com/你的用户名/bushaoxin.git
+git branch -M main
 git push -u origin main
 ```
 
+> 推送需要你的 GitHub 凭据。本机有一把 SSH key 但**尚未绑定到 GitHub 账号**，
+> 所以这一步只能你来做（或把 key 加到 GitHub 设置里）。
+
 然后 GitHub → Actions → Build iOS → Run workflow。
-日志里会有一段「编译错误汇总」，把那段贴回来即可。
+日志里那段「编译错误汇总」贴回来即可。
 
 **额度**：公共仓库免费；私有仓库 2000 分钟/月，macOS 按 10 倍计 ≈ 200 分钟 ≈ 编译 20 次。
 

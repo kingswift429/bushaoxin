@@ -89,24 +89,32 @@ struct MineView: View {
 
                 Divider().opacity(0.5).padding(.leading, 44)
 
-                Link(destination: URL(string: "mailto:support@bushaoxin.app")!) {
-                    settingsRow("envelope", L.supportEmail)
+                // 用 AppLinks 统一取地址；URL 为 nil 时退化成一个不可点的行，
+                // 而不是 `URL(string:)!` 崩溃。
+                if let mail = AppLinks.supportMailURL {
+                    Link(destination: mail) {
+                        settingsRow("envelope", L.supportEmail)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
 
                 Divider().opacity(0.5).padding(.leading, 44)
 
-                Link(destination: URL(string: "https://bushaoxin.app/privacy")!) {
-                    settingsRow("lock.shield", L.privacyPolicy)
+                if let url = AppLinks.privacyURL {
+                    Link(destination: url) {
+                        settingsRow("lock.shield", L.privacyPolicy)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
 
                 Divider().opacity(0.5).padding(.leading, 44)
 
-                Link(destination: URL(string: "https://bushaoxin.app/terms")!) {
-                    settingsRow("doc.text", L.termsOfUse)
+                if let url = AppLinks.termsURL {
+                    Link(destination: url) {
+                        settingsRow("doc.text", L.termsOfUse)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
             .cardStyle(padding: 0)
 
@@ -269,33 +277,13 @@ struct MineView: View {
             if !groups.isEmpty {
                 VStack(alignment: .leading, spacing: 11) {
                     sectionTitle(L.whereSaved)
-                    let maxV = groups.first?.value ?? 1
                     ForEach(groups, id: \.key) { item in
-                        let key = item.key
-                        let v = item.value
-                        HStack(spacing: 10) {
-                            Text(SpendCategory(key: key)?.localizedName ?? key)
-                                .font(.system(size: 12.5))
-                                .foregroundStyle(Theme.ink)
-                                .frame(width: 62, alignment: .leading)
-                                .lineLimit(1)
-                            GeometryReader { geo in
-                                let ratio = maxV > 0
-                                    ? NSDecimalNumber(decimal: v / maxV).doubleValue : 0
-                                ZStack(alignment: .leading) {
-                                    Capsule().fill(Theme.line.opacity(0.6))
-                                    Capsule().fill(Theme.pass.opacity(0.75))
-                                        .frame(width: max(6, geo.size.width * ratio))
-                                }
-                            }
-                            .frame(height: 8)
-                            Text(MoneyFormatter.string(v, code: mainCode ?? "CNY"))
-                                .font(.system(size: 12, weight: .medium, design: .rounded))
-                                .foregroundStyle(Theme.sub)
-                                .frame(width: 76, alignment: .trailing)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.8)
-                        }
+                        CategoryBarRow(
+                            label: SpendCategory(key: item.key)?.localizedName ?? item.key,
+                            amount: item.value,
+                            maxAmount: groups.first?.value ?? 1,
+                            code: mainCode ?? "CNY"
+                        )
                     }
                 }
                 .cardStyle()
@@ -444,5 +432,56 @@ struct CooldownRow: View {
             }
         }
         .cardStyle(padding: 14)
+    }
+}
+
+// MARK: - 分类占比条
+
+/// 单个分类的占比条。
+///
+/// 为什么单独抽出来：
+/// 原来它内联在 MineView 的 body 第 9 层嵌套里（ForEach > HStack >
+/// GeometryReader > ZStack），且三元表达式里混用 Double 与整数字面量。
+/// 这种组合是 Swift 类型检查超时的典型触发点 —— 编译会卡几十秒甚至报
+/// "unable to type-check this expression in reasonable time"。
+/// 拆成独立 View 后每层类型都能单独推断，编译速度和稳定性都更好。
+private struct CategoryBarRow: View {
+    let label: String
+    let amount: Decimal
+    let maxAmount: Decimal
+    let code: String
+
+    /// 明确声明为 Double，避免三元表达式里 `: 0` 引发类型推断歧义
+    private var ratio: Double {
+        guard maxAmount > 0 else { return 0 }
+        let r = NSDecimalNumber(decimal: amount / maxAmount).doubleValue
+        return max(0, min(1, r))
+    }
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Text(label)
+                .font(.system(size: 12.5))
+                .foregroundStyle(Theme.ink)
+                .frame(width: 62, alignment: .leading)
+                .lineLimit(1)
+
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Theme.line.opacity(0.6))
+                    Capsule()
+                        .fill(Theme.pass.opacity(0.75))
+                        .frame(width: max(6, geo.size.width * ratio))
+                }
+            }
+            .frame(height: 8)
+
+            Text(MoneyFormatter.string(amount, code: code))
+                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .foregroundStyle(Theme.sub)
+                .frame(width: 76, alignment: .trailing)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
     }
 }

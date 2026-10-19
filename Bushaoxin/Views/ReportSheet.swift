@@ -120,7 +120,8 @@ struct ReportSheet: View {
             // 用 .task 而不是 DispatchQueue.asyncAfter：
             // 用户若在这 2 秒内手动关掉弹窗，.task 会被取消，
             // 不会对一个已销毁的 presentation 调 dismiss()。
-            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            // Task.sleep(nanoseconds:) 在 iOS 16 起已废弃，用 for: .seconds 写法。
+            try? await Task.sleep(for: .seconds(2))
             if !Task.isCancelled { dismiss() }
         }
     }
