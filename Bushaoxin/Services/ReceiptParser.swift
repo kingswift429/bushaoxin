@@ -1,5 +1,8 @@
 import Foundation
-import Vision
+// Vision 的 VNImageRequestHandler / VNRecognizeTextRequest 至今没有标注 Sendable，
+// 在 Swift 6 的严格并发检查下会持续报警告。
+// @preconcurrency 表示"这个模块里的类型我承诺妥善处理并发"，正好用于这种情况。
+@preconcurrency import Vision
 import UIKit
 import CoreImage
 
@@ -45,20 +48,25 @@ enum ReceiptParser {
         let once = OnceBox()
 
         return await withCheckedContinuation { (cont: CheckedContinuation<String?, Never>) in
-            let request = VNRecognizeTextRequest { req, _ in
-                let lines = (req.results as? [VNRecognizedTextObservation] ?? [])
-                    .compactMap { $0.topCandidates(1).first?.string }
-                if once.tryComplete() {
-                    cont.resume(returning: lines.joined(separator: "\n"))
-                }
-            }
-            request.recognitionLevel = .accurate
-            // 中英混合，购物截图里同时有中文商品名和 "¥"/"RMB"
-            request.recognitionLanguages = ["zh-Hans", "en-US"]
-            request.usesLanguageCorrection = true
-
-            let handler = VNImageRequestHandler(cgImage: cg, options: [:])
+            // 关键：VNImageRequestHandler 和 VNRecognizeTextRequest 都不是 Sendable，
+            // 在外层创建再传进 DispatchQueue.async 的 @Sendable 闭包会被 Swift 6 判为
+            // "capture of non-sendable type in a @Sendable closure"。
+            // 改成**在闭包内部创建**，对象不跨并发域，警告消失且语义不变
+            // （它们本来也只在这一次识别里用一次）。
             DispatchQueue.global(qos: .userInitiated).async {
+                let request = VNRecognizeTextRequest { req, _ in
+                    let lines = (req.results as? [VNRecognizedTextObservation] ?? [])
+                        .compactMap { $0.topCandidates(1).first?.string }
+                    if once.tryComplete() {
+                        cont.resume(returning: lines.joined(separator: "\n"))
+                    }
+                }
+                request.recognitionLevel = .accurate
+                // 中英混合，购物截图里同时有中文商品名和 "¥"/"RMB"
+                request.recognitionLanguages = ["zh-Hans", "en-US"]
+                request.usesLanguageCorrection = true
+
+                let handler = VNImageRequestHandler(cgImage: cg, options: [:])
                 do { try handler.perform([request]) }
                 catch {
                     if once.tryComplete() { cont.resume(returning: nil) }
