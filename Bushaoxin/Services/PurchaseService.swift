@@ -66,7 +66,17 @@ final class PurchaseService {
     // MARK: 购买
 
     func purchase(_ plan: Plan) async -> Bool {
-        guard let product = product(for: plan) ?? (try? await Product.products(for: [plan.productID]))?.first else {
+        // 原来写成 `product(for: plan) ?? (try? await Product.products(...))?.first`，
+        // 把 await 塞进 `??` 的右操作数会让编译器在推导更长的
+        // 表达式时丢失并发上下文，报
+        // "'async' call in a function that does not support concurrency"。
+        // 拆成两步后每步都是独立的 async 语句，类型和并发上下文都明确。
+        var product = product(for: plan)
+        if product == nil {
+            let fetched = try? await Product.products(for: [plan.productID])
+            product = fetched?.first
+        }
+        guard let product else {
             lastError = "商品未加载，请稍后重试"
             return false
         }
