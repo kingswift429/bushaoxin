@@ -133,7 +133,7 @@ struct PaywallView: View {
                     .font(.system(size: 11.5))
                     .foregroundStyle(isOn ? Theme.ink.opacity(0.7) : Theme.sub)
 
-                Text(purchase.localizedPrice(for: plan) ?? plan.displayPrice)
+                Text(purchase.localizedPrice(for: plan) ?? plan.fallbackPrice)
                     .font(.system(size: 24, weight: .bold, design: .rounded))
                     .foregroundStyle(Theme.ink)
 
@@ -173,7 +173,7 @@ struct PaywallView: View {
                     if purchase.isPurchasing {
                         ProgressView().tint(.white)
                     } else {
-                        Text("\(L.paywallSubscribe) · \(purchase.localizedPrice(for: selected) ?? selected.displayPrice)")
+                        Text("\(L.paywallSubscribe) · \(purchase.localizedPrice(for: selected) ?? selected.fallbackPrice)")
                             .font(.system(size: 15.5, weight: .semibold))
                     }
                 }

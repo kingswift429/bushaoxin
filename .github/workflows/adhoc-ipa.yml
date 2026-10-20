@@ -1,0 +1,338 @@
+name: Build Ad Hoc IPA
+
+# 为什么有这个文件：
+#   开发和测试都不在中国大陆，而 TestFlight 在大陆网络下不可用。
+#   Ad Hoc 分发绕开 TestFlight，直接把签好名的 .ipa 装到指定设备上。
+#
+# 和 release-testflight.yml 的关键区别：
+#
+#   TestFlight (app-store-connect)  Ad Hoc (ad-hoc)
+#   ─────────────────────────────   ─────────────────────────────
+#   不需要设备 UDID                 必须把每台设备的 UDID 注册到账号
+#   Distribution 证书                Distribution 证书
+#   描述文件无设备限制              描述文件内嵌最多 100 台 UDID
+#   走 Apple 审核                   不需要审核
+#   大陆网络不通                    完全离线安装
+#
+# 前置条件：
+#   1. 把目标 iPhone 的 UDID 注册到开发者账号
+#   2. 环境变量 ADHOC_UDIDS 里列出这些 UDID（逗号分隔）
+#      或在仓库 Secret 里配置同一名字
+#
+# 触发方式：
+#   Actions 页 -> Build Ad Hoc IPA -> Run workflow
+#   UDID 填在输入框里（方便临时给某台设备打包）
+
+on:
+  workflow_dispatch:
+    inputs:
+      udids:
+        description: "目标设备 UDID（逗号分隔，可留空则用 Secret ADHOC_UDIDS）"
+        required: false
+        default: ""
+      changelog:
+        description: "更新说明"
+        required: false
+        default: "Ad Hoc 测试版"
+
+concurrency:
+  group: adhoc-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  adhoc:
+    name: Archive & Export Ad Hoc
+    runs-on: macos-26
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          xcodebuild -showsdks | grep -i iphoneos || true
+
+      - name: Install XcodeGen
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+          HOMEBREW_NO_INSTALL_CLEANUP: "1"
+        run: |
+          brew install xcodegen
+          xcodegen --version
+
+      - name: Check secrets and UDIDs
+        shell: bash
+        env:
+          K: ${{ secrets.ASC_KEY_ID }}
+          I: ${{ secrets.ASC_ISSUER_ID }}
+          P: ${{ secrets.ASC_KEY_P8 }}
+          INPUT_UDIDS: ${{ inputs.udids }}
+          SECRET_UDIDS: ${{ secrets.ADHOC_UDIDS }}
+        run: |
+          missing=0
+          [ -n "$K" ] || { echo "::error::缺少 secret ASC_KEY_ID"; missing=1; }
+          [ -n "$I" ] || { echo "::error::缺少 secret ASC_ISSUER_ID"; missing=1; }
+          [ -n "$P" ] || { echo "::error::缺少 secret ASC_KEY_P8"; missing=1; }
+          [ "$missing" -eq 0 ] || exit 1
+          echo "三个 ASC Secret 都存在"
+
+          # UDID 来源优先级：手动输入 > Secret
+          UDIDS="$INPUT_UDIDS"
+          if [ -z "$UDIDS" ]; then
+            UDIDS="$SECRET_UDIDS"
+          fi
+
+          if [ -z "$UDIDS" ]; then
+            echo "::error::没有 UDID。请在输入框填写，或配置 secret ADHOC_UDIDS"
+            echo "Ad Hoc 描述文件必须内嵌设备 UDID，没有 UDID 无法打包"
+            exit 1
+          fi
+
+          # 校验格式：40 位十六进制，或新式 8-16 位
+          echo "$UDIDS" | tr ',' '\n' | while read -r u; do
+            u=$(echo "$u" | tr -d ' ')
+            [ -z "$u" ] && continue
+            if echo "$u" | grep -qE '^[0-9A-Fa-f]{40}$|^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{16}$'; then
+              echo "  UDID 格式正确：$u"
+            else
+              echo "::error::UDID 格式不对：$u"
+              echo "  应为 40 位十六进制，或 00008110-0012345678ABCDEF 形式"
+              exit 1
+            fi
+          done
+
+          echo "UDIDS=$UDIDS" >> "$GITHUB_ENV"
+
+      - name: Install ASC API key
+        shell: bash
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          mkdir -p "$HOME/private_keys"
+          KEY_PATH="$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          printf '%s' "$ASC_KEY_P8" > "$KEY_PATH"
+          head -1 "$KEY_PATH" | grep -q "BEGIN PRIVATE KEY" || {
+            echo "::error::.p8 不是 PEM 格式"
+            exit 1
+          }
+          chmod 600 "$KEY_PATH"
+          echo "API Key 已安装"
+
+      - name: Register devices
+        shell: bash
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          # 用 API 把 UDID 注册到账号。
+          #
+          # 为什么必须先注册：
+          # Ad Hoc 描述文件只能包含已注册的设备。直接打包会因为
+          # "device not included in profile" 失败。
+          #
+          # 设备注册是账号级操作，一旦注册就占名额（每年 100 台上限），
+          # 移除也不会退回名额 —— 所以脚本先查已有设备，避免重复注册。
+          python3 - <<'PY'
+          import os, json, hashlib, base64, time, urllib.request
+
+          KEY_ID = os.environ['ASC_KEY_ID']
+          ISSUER = os.environ['ASC_ISSUER_ID']
+          KEY_PATH = os.path.expanduser(f"~/private_keys/AuthKey_{KEY_ID}.p8")
+          UDIDS = [u.strip() for u in os.environ['UDIDS'].split(',') if u.strip()]
+
+          def b64url(b):
+              return base64.urlsafe_b64encode(b).rstrip(b'=')
+
+          # ES256 JWT。iat 必须比当前时间早，否则苹果拒收（"issued in the future"）
+          now = int(time.time())
+          header = b64url(json.dumps({"alg":"ES256","kid":KEY_ID,"typ":"JWT"}).encode())
+          payload = b64url(json.dumps({"iss":ISSUER,"iat":now-60,"exp":now+1100,"aud":"appstoreconnect-v1"}).encode())
+          signing_input = header + b'.' + payload
+
+          # 用 openssl 签 ES256，输出 DER 再转成 raw r||s
+          import subprocess, tempfile
+          with tempfile.NamedTemporaryFile('w', suffix='.txt', delete=False) as f:
+              f.write(signing_input.decode())
+              msgfile = f.name
+          der = subprocess.run(
+              ['openssl','dgst','-sha256','-sign',KEY_PATH,msgfile],
+              capture_output=True).stdout
+          # DER: 30 len 02 len r 02 len s  ->  取 r,s 各补到 32 字节
+          def der_to_raw(d):
+              i = 2
+              if d[1] & 0x80: i = 2 + (d[1] & 0x7f)
+              r_len = d[i+1]; r = d[i+2:i+2+r_len]; i = i+2+r_len
+              s_len = d[i+1]; s = d[i+2:i+2+s_len]
+              return r.lstrip(b'\x00').rjust(32,b'\x00') + s.lstrip(b'\x00').rjust(32,b'\x00')
+          raw = der_to_raw(der)
+          jwt = (signing_input + b'.' + b64url(raw)).decode()
+
+          def api(method, path, body=None):
+              data = json.dumps(body).encode() if body else None
+              req = urllib.request.Request(
+                  'https://api.appstoreconnect.apple.com' + path,
+                  data=data, method=method,
+                  headers={'Authorization':'Bearer '+jwt,
+                           'Content-Type':'application/json'})
+              try:
+                  with urllib.request.urlopen(req) as r:
+                      return r.status, json.loads(r.read() or b'{}')
+              except urllib.error.HTTPError as e:
+                  return e.code, json.loads(e.read() or b'{}')
+
+          # 查已有设备
+          st, existing = api('GET', '/v1/devices?limit=200')
+          known = set()
+          if st == 200 and 'data' in existing:
+              for d in existing['data']:
+                  known.add(d['attributes']['udid'].upper())
+              print(f"账号已有 {len(known)} 台设备")
+          else:
+              print(f"查询设备失败 HTTP {st}: {str(existing)[:200]}")
+
+          for udid in UDIDS:
+              if udid.upper() in known:
+                  print(f"  已注册，跳过：{udid}")
+                  continue
+              st, resp = api('POST', '/v1/devices', {
+                  "data": {"type":"devices",
+                           "attributes":{"name":f"AdHoc-{udid[-6:]}",
+                                         "platform":"IOS",
+                                         "udid":udid}}
+              })
+              if st in (200,201):
+                  print(f"  注册成功：{udid}")
+              else:
+                  print(f"  注册失败 HTTP {st}：{str(resp)[:300]}")
+          PY
+
+      - name: Generate project
+        run: |
+          xcodegen generate --spec project.yml
+          test -f Bushaoxin.xcodeproj/project.pbxproj || {
+            echo "::error::xcodegen 没有生成工程"
+            exit 1
+          }
+
+      - name: Archive
+        shell: bash
+        run: |
+          set +e
+          set -o pipefail
+          # 和 TestFlight 流程一样，归档不签名，签名留在 exportArchive。
+          xcodebuild archive \
+            -project Bushaoxin.xcodeproj \
+            -scheme Bushaoxin \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/Bushaoxin.xcarchive \
+            DEVELOPMENT_TEAM=GB6U7SA29H \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            > archive.log 2>&1
+          STATUS=$?
+
+          echo "=========== 错误汇总 ==========="
+          if grep -qE "error:" archive.log; then
+            grep -E "error:" archive.log | sort -u | head -60
+          else
+            echo "（无 error: 行）"
+          fi
+          tail -30 archive.log
+
+          [ "$STATUS" -eq 0 ] || { echo "::error::归档失败"; exit "$STATUS"; }
+          test -d build/Bushaoxin.xcarchive || { echo "::error::没有 .xcarchive"; exit 1; }
+          echo "::notice::归档成功"
+
+      - name: Export Ad Hoc IPA
+        shell: bash
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          cat > ExportOptions.plist <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <!-- ad-hoc：分发到描述文件内列出的设备，不经 App Store -->
+            <key>method</key>
+            <string>ad-hoc</string>
+            <key>destination</key>
+            <string>export</string>
+            <key>signingStyle</key>
+            <string>automatic</string>
+            <key>uploadSymbols</key>
+            <true/>
+            <key>stripSwiftSymbols</key>
+            <true/>
+            <key>manageAppVersionAndBuildNumber</key>
+            <false/>
+            <key>teamID</key>
+            <string>GB6U7SA29H</string>
+          </dict>
+          </plist>
+          PLIST
+
+          set +e
+          set -o pipefail
+          # -allowProvisioningUpdates + API Key 让 xcodebuild 自动签发
+          # iOS Distribution (Ad Hoc) 描述文件，并把已注册设备纳入其中。
+          xcodebuild -exportArchive \
+            -archivePath build/Bushaoxin.xcarchive \
+            -exportPath build/export \
+            -exportOptionsPlist ExportOptions.plist \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            > export.log 2>&1
+          STATUS=$?
+
+          echo "=========== 错误汇总 ==========="
+          if grep -qE "error:" export.log; then
+            grep -E "error:" export.log | sort -u | head -60
+          else
+            echo "（无 error: 行）"
+          fi
+          tail -40 export.log
+
+          [ "$STATUS" -eq 0 ] || { echo "::error::导出失败（exit $STATUS）"; exit "$STATUS"; }
+
+          IPA=$(find build/export -name "*.ipa" | head -1)
+          [ -n "$IPA" ] || { echo "::error::没有 .ipa"; exit 1; }
+          echo "::notice::IPA：$IPA ($(du -h "$IPA" | cut -f1))"
+
+          # 验证 ipa 里确实带 mobileprovision 且是 Ad Hoc
+          rm -rf /tmp/ipacheck && mkdir -p /tmp/ipacheck
+          unzip -q "$IPA" -d /tmp/ipacheck
+          PROFILE=$(find /tmp/ipacheck -name "embedded.mobileprovision" | head -1)
+          if [ -z "$PROFILE" ]; then
+            echo "::error::IPA 里没有 embedded.mobileprovision —— 装不上真机"
+            exit 1
+          fi
+          echo "=========== 描述文件信息 ==========="
+          security cms -D -i "$PROFILE" > /tmp/profile.plist 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Print :Name" /tmp/profile.plist 2>/dev/null | sed 's/^/  名称: /'
+          /usr/libexec/PlistBuddy -c "Print :ProvisionsAllDevices" /tmp/profile.plist 2>/dev/null | sed 's/^/  全设备: /' || echo "  全设备: false (Ad Hoc 正常)"
+          # 统计内嵌设备数
+          DEVCOUNT=$(/usr/libexec/PlistBuddy -c "Print :ProvisionedDevices" /tmp/profile.plist 2>/dev/null | grep -c "UDID" || echo 0)
+          echo "  内嵌设备数: $DEVCOUNT"
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: adhoc-ipa
+          path: |
+            build/export/*.ipa
+            archive.log
+            export.log
+            ExportOptions.plist
+          if-no-files-found: ignore
+          retention-days: 30

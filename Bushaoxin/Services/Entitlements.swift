@@ -50,19 +50,34 @@ enum Plan: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    /// StoreKit 商品 ID —— 需在 App Store Connect 建好同名商品
+    /// StoreKit 商品 ID —— 必须和 App Store Connect 里创建的一致。
+    ///
+    /// 命名规则是 <BundleID>.<套餐>，BundleID 是
+    /// com.kingswift429.bushaoxin，所以完整 ID 是：
+    ///   com.kingswift429.bushaoxin.plus.monthly
+    ///   com.kingswift429.bushaoxin.plus.yearly
+    ///
+    /// 注意：原来这里写的是 com.yourteam.bushaoxin.plus.*，
+    /// 是项目模板遗留的占位符。用占位符的话 Product.products(for:)
+    /// 会静默返回空数组 —— 不报错，但付费墙永远显示不出价格，
+    /// 用户点"继续"没有任何反应。这类问题很难在生产环境定位，
+    /// 所以必须在提交审核前改对。
     var productID: String {
         switch self {
-        case .monthly: return "com.yourteam.bushaoxin.plus.monthly"
-        case .yearly:  return "com.yourteam.bushaoxin.plus.yearly"
+        case .monthly: return "com.kingswift429.bushaoxin.plus.monthly"
+        case .yearly:  return "com.kingswift429.bushaoxin.plus.yearly"
         }
     }
 
-    /// 展示用价格（实际应从 StoreKit 拉取本地化价格）
-    var displayPrice: String {
+    /// 兜底展示价格。
+    ///
+    /// 正常情况下界面应该用 StoreKit 返回的 product.displayPrice，
+    /// 那个值由苹果按用户所在地区、币种、税率自动本地化。
+    /// 这里只是拉取失败时的占位，用美元符号避免暗示只有人民币用户。
+    var fallbackPrice: String {
         switch self {
-        case .monthly: return "¥18"
-        case .yearly:  return "¥128"
+        case .monthly: return "$2.99"
+        case .yearly:  return "$19.99"
         }
     }
 
