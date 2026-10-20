@@ -143,6 +143,64 @@ jobs:
           test -f "$APP/Assets.car" && echo "Assets.car 已打包" \
             || echo "::warning::没有 Assets.car（AppIcon/AccentColor 可能没生效）"
 
+          # ── 图标必须真的进包，否则安装后显示系统占位图 ──────────
+          #
+          # 出过的问题：TestFlight 装到 iPhone 上图标是空白的。
+          # 原因是 AppIcon.appiconset 里只有 default 变体，
+          # iOS 26/Xcode 26 的 actool 没有生成图标条目。
+          #
+          # 这里硬性检查三件事，任何一条不满足直接失败，
+          # 不要等到装到手机上才发现。
+          echo ""
+          echo "=== App 图标校验 ==="
+
+          ICON_FAIL=0
+          shopt -s nullglob
+          ICONS=("$APP"/AppIcon*.*)
+          shopt -u nullglob
+
+          if [ ${#ICONS[@]} -eq 0 ]; then
+            echo "::error::产物里没有任何 AppIcon* 文件 —— actool 没有生成图标"
+            ICON_FAIL=1
+          else
+            echo "找到 ${#ICONS[@]} 个图标文件："
+            for f in "${ICONS[@]}"; do
+              echo "  $(basename "$f")  $(du -h "$f" | cut -f1)"
+            done
+          fi
+
+          # Info.plist 里必须引用图标
+          if [ -f "$APP/Info.plist" ]; then
+            if /usr/libexec/PlistBuddy -c "Print :CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconName" "$APP/Info.plist" >/dev/null 2>&1; then
+              ICON_NAME=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconName" "$APP/Info.plist")
+              echo "Info.plist 图标键：CFBundleIconName = $ICON_NAME"
+            else
+              # 旧式 CFBundleIconFiles 也可以
+              if /usr/libexec/PlistBuddy -c "Print :CFBundleIconFiles" "$APP/Info.plist" >/dev/null 2>&1; then
+                echo "Info.plist 使用 CFBundleIconFiles（旧式）"
+              else
+                echo "::error::Info.plist 里既没有 CFBundleIconName 也没有 CFBundleIconFiles"
+                ICON_FAIL=1
+              fi
+            fi
+          fi
+
+          # Assets.car 里必须能找到 AppIcon 符号
+          if [ -f "$APP/Assets.car" ]; then
+            if xcrun --sdk iphoneos assetutil --info "$APP/Assets.car" 2>/dev/null | grep -q "AppIcon"; then
+              echo "Assets.car 内含 AppIcon 条目"
+            else
+              echo "::error::Assets.car 里找不到 AppIcon 条目 —— 图标没有被编译进去"
+              ICON_FAIL=1
+            fi
+          fi
+
+          if [ "$ICON_FAIL" -ne 0 ]; then
+            echo "::error::图标校验未通过，安装后会显示系统占位图"
+            exit 1
+          fi
+          echo "图标校验通过"
+
           echo "::notice::编译成功"
 
       - name: Upload build log
