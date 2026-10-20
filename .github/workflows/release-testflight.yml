@@ -167,6 +167,7 @@ jobs:
             -configuration Release \
             -destination 'generic/platform=iOS' \
             -archivePath build/Bushaoxin.xcarchive \
+            DEVELOPMENT_TEAM=GB6U7SA29H \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
@@ -227,6 +228,13 @@ jobs:
             <!-- 不自动改版本号，版本由 project.yml 管 -->
             <key>manageAppVersionAndBuildNumber</key>
             <false/>
+            <!-- 必须显式给 teamID：
+                 归档阶段用了 CODE_SIGNING_ALLOWED=NO，.xcarchive 里
+                 没有记录签名团队信息，导出时会报
+                 "exportArchive No Team Found in Archive"。
+                 这里补上即可，值和 project.yml 的 DEVELOPMENT_TEAM 保持一致。 -->
+            <key>teamID</key>
+            <string>GB6U7SA29H</string>
           </dict>
           </plist>
           PLIST
