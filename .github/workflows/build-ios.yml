@@ -255,6 +255,56 @@ jobs:
             echo "没有多余的备份文件"
           fi
 
+          # ── 图标显示名必须按语言生效 ────────────────────────────
+          #
+          # 这是最容易"看起来成功但实际没生效"的一环：
+          # InfoPlist.strings 只有在 <locale>.lproj/ 目录里，
+          # 才会被 Xcode 当作「覆盖 Info.plist」的本地化资源。
+          # 如果文件名是平铺的 InfoPlist.zh-Hans.strings，
+          # 编译不会报错，但 CFBundleDisplayName 永远不会被覆盖，
+          # 图标名在任何语言下都还是中文。
+          #
+          # 所以这里直接读产物里的文件内容来验证。
+          echo ""
+          echo "=== 图标显示名本地化校验 ==="
+
+          NAME_FAIL=0
+          for loc in $EXPECTED_LOCALES; do
+            f="$APP/$loc.lproj/InfoPlist.strings"
+            if [ ! -f "$f" ]; then
+              echo "::error::$loc.lproj 里没有 InfoPlist.strings —— 图标名不会本地化"
+              NAME_FAIL=1
+              continue
+            fi
+            # 从二进制 plist 里取 CFBundleDisplayName
+            nm=$(plutil -extract CFBundleDisplayName raw -o - "$f" 2>/dev/null || echo "")
+            if [ -z "$nm" ]; then
+              echo "::error::$loc 的 InfoPlist.strings 里没有 CFBundleDisplayName"
+              NAME_FAIL=1
+            else
+              echo "  $loc -> $nm"
+            fi
+          done
+
+          # 中文必须是「不烧心」，其余必须是 Wait A Day。
+          # 防止哪天有人批量替换把中文名也一起改掉。
+          ZH_NAME=$(plutil -extract CFBundleDisplayName raw -o - "$APP/zh-Hans.lproj/InfoPlist.strings" 2>/dev/null || echo "")
+          EN_NAME=$(plutil -extract CFBundleDisplayName raw -o - "$APP/en.lproj/InfoPlist.strings" 2>/dev/null || echo "")
+          if [ "$ZH_NAME" != "不烧心" ]; then
+            echo "::error::中文图标名应为「不烧心」，实际是「$ZH_NAME」"
+            NAME_FAIL=1
+          fi
+          if [ "$EN_NAME" != "Wait A Day" ]; then
+            echo "::error::英文图标名应为 Wait A Day，实际是「$EN_NAME」"
+            NAME_FAIL=1
+          fi
+
+          if [ "$NAME_FAIL" -ne 0 ]; then
+            echo "::error::图标显示名本地化校验未通过"
+            exit 1
+          fi
+          echo "图标显示名本地化校验通过"
+
           if [ "$L10N_FAIL" -ne 0 ]; then
             echo "::error::本地化校验未通过"
             exit 1
