@@ -1,5 +1,5 @@
-# XcodeGen 生成的工程 —— 每次 generate 都重新生成，且 .pbxproj 的 UUID 每次都变，
-# 提交进来只会产生巨大且无意义的 diff。
+# XcodeGen 生成的工程 —— 每次 generate 都重新生成，
+# 且 .pbxproj 的 UUID 每次都变，提交进来只会产生巨大且无意义的 diff。
 Bushaoxin.xcodeproj/
 *.xcodeproj/
 
@@ -45,6 +45,12 @@ node_modules/
 AuthKey_*.p8
 .env
 
-# ����/��װ��־
+# 构建/安装日志
 verify/*.log
 verify/*.log.err
+
+# 本地化备份文件 —— 会被 actool 当作资源打包进 .app，
+# 白白增大包体，还可能被审核质疑「为什么包里有 .bak」。
+# 真正的版本历史由 git 负责，不需要文件级备份。
+*.strings.bak
+*.xcstrings.bak

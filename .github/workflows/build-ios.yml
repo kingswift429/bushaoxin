@@ -201,6 +201,66 @@ jobs:
           fi
           echo "图标校验通过"
 
+          # ── 本地化校验 ─────────────────────────────────────────
+          #
+          # 出过的问题：merge_translations.py 把 Localizable.xcstrings.bak
+          # 备份留在原目录，actool 把它当成资源一起打进了 .app。
+          # 后果是包体白白增大，且审核看到 .bak 会追问。
+          #
+          # 这里既检查"该有的 lproj 在不在"，也检查"不该有的文件在不在"。
+          echo ""
+          echo "=== 本地化校验 ==="
+
+          L10N_FAIL=0
+
+          # 支持的 12 种语言，必须和 project.yml 的 CFBundleLocalizations 一致
+          EXPECTED_LOCALES="zh-Hans en ja ko fr de es pt-BR ru ar it nl"
+          MISSING=""
+          for loc in $EXPECTED_LOCALES; do
+            if [ ! -d "$APP/$loc.lproj" ]; then
+              MISSING="$MISSING $loc"
+            fi
+          done
+
+          if [ -n "$MISSING" ]; then
+            echo "::error::缺少本地化目录：$MISSING"
+            L10N_FAIL=1
+          else
+            echo "12 种语言的 .lproj 全部存在"
+          fi
+
+          # 每种语言都要有可用的 Localizable.strings
+          for loc in $EXPECTED_LOCALES; do
+            f="$APP/$loc.lproj/Localizable.strings"
+            if [ -f "$f" ]; then
+              # plutil 能解析才说明是合法 plist/strings
+              if ! plutil -lint "$f" >/dev/null 2>&1; then
+                echo "::error::$loc 的 Localizable.strings 格式非法"
+                L10N_FAIL=1
+              fi
+            else
+              echo "::error::$loc.lproj 里没有 Localizable.strings"
+              L10N_FAIL=1
+            fi
+          done
+          echo "各语言 Localizable.strings 格式合法"
+
+          # 备份文件绝不能进包
+          STRAY=$(find "$APP" -name "*.bak" -o -name "*.orig" -o -name "*~" 2>/dev/null)
+          if [ -n "$STRAY" ]; then
+            echo "::error::产物里混入了备份/临时文件："
+            echo "$STRAY"
+            L10N_FAIL=1
+          else
+            echo "没有多余的备份文件"
+          fi
+
+          if [ "$L10N_FAIL" -ne 0 ]; then
+            echo "::error::本地化校验未通过"
+            exit 1
+          fi
+          echo "本地化校验通过"
+
           echo "::notice::编译成功"
 
       - name: Upload build log
