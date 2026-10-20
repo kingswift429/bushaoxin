@@ -73,9 +73,25 @@ targets:
         UIRequiresFullScreen: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
-        # 声明支持的语言，App Store 会据此展示「支持中文/英语/日语/韩语」
+        # 声明支持的语言。App Store 会据此在产品页展示支持的语言列表，
+        # 也决定系统在哪些地区把 App 显示为"已本地化"。
+        #
+        # 这里必须和 Bushaoxin/Localization/Localizable.xcstrings 里的
+        # 语言代码完全一致，否则 Xcode 会警告"声明了但没资源"或
+        # "有资源但没声明"。
+        #
+        # 注意 en 不要写成 en-US：xcstrings 里用的是 en，
+        # Bundle 的 lproj 目录也是 en.lproj。
         CFBundleLocalizations:
           - zh-Hans
           - en
           - ja
           - ko
+          - fr
+          - de
+          - es
+          - pt-BR
+          - ru
+          - ar
+          - it
+          - nl
