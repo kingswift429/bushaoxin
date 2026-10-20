@@ -234,19 +234,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cool Head"
+            "value" : "Wait A Day"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ひと息"
+            "value" : "Wait A Day"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "한숨"
+            "value" : "Wait A Day"
           }
         },
         "zh-Hans" : {
@@ -258,49 +258,49 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cool Head"
+            "value" : "Wait A Day"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cool Head"
+            "value" : "Wait A Day"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cool Head"
+            "value" : "Wait A Day"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cool Head"
+            "value" : "Wait A Day"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cool Head"
+            "value" : "Wait A Day"
           }
         },
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cool Head"
+            "value" : "Wait A Day"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cool Head"
+            "value" : "Wait A Day"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cool Head"
+            "value" : "Wait A Day"
           }
         }
       }
@@ -310,19 +310,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Spend well, sleep fine"
+            "value" : "Wait a day. Spend better."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "買ってよかった、と眠れる"
+            "value" : "一日置いて、買う。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "잘 쓰고 편하게"
+            "value" : "하루만 더, 그리고 결정."
           }
         },
         "zh-Hans" : {
@@ -334,49 +334,49 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bien dépenser, l'esprit tranquille"
+            "value" : "Attendez un jour. Achetez mieux."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gut kaufen, ruhig schlafen"
+            "value" : "Einen Tag warten. Besser kaufen."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gasta bien, duerme tranquilo"
+            "value" : "Espera un día. Compra mejor."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gaste bem, durma tranquilo"
+            "value" : "Espere um dia. Compre melhor."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Тратьте с умом, спите спокойно"
+            "value" : "День подождите. Купите лучше."
           }
         },
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "أنفق بذكاء، ونم مرتاحًا"
+            "value" : "انتظر يومًا. واشترِ أفضل."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Spendi bene, dormi sereno"
+            "value" : "Aspetta un giorno. Compra meglio."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Goed besteden, rustig slapen"
+            "value" : "Wacht een dag. Koop beter."
           }
         }
       }
@@ -7606,73 +7606,73 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "不烧心 Plus"
+            "value" : "Wait A Day Plus"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ひと息 Plus"
+            "value" : "Wait A Day Plus"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "한숨 Plus"
+            "value" : "Wait A Day Plus"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "不烧心 Plus"
+            "value" : "Wait A Day Plus"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cool Head Plus"
+            "value" : "Wait A Day Plus"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cool Head Plus"
+            "value" : "Wait A Day Plus"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cool Head Plus"
+            "value" : "Wait A Day Plus"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cool Head Plus"
+            "value" : "Wait A Day Plus"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cool Head Plus"
+            "value" : "Wait A Day Plus"
           }
         },
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cool Head Plus"
+            "value" : "Wait A Day Plus"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cool Head Plus"
+            "value" : "Wait A Day Plus"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cool Head Plus"
+            "value" : "Wait A Day Plus"
           }
         }
       }

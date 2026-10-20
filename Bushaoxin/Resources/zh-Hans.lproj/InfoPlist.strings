@@ -1,0 +1,8 @@
+/* 自动生成，请勿手改。源：verify/gen_lproj.py */
+
+/* 桌面图标下显示的名字 */
+"CFBundleDisplayName" = "不烧心";
+
+/* 权限弹窗文案 */
+"NSPhotoLibraryUsageDescription" = "用来从购物截图里自动识别商品名和价格，快速发起审批。";
+"NSCameraUsageDescription" = "用来拍摄价签或商品页，自动填入审批单。";

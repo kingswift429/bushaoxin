@@ -1,0 +1,8 @@
+/* 自动生成，请勿手改。源：verify/gen_lproj.py */
+
+/* 桌面图标下显示的名字 */
+"CFBundleDisplayName" = "Wait A Day";
+
+/* 权限弹窗文案 */
+"NSPhotoLibraryUsageDescription" = "Liest Artikelname und Preis aus deinen Einkaufs-Screenshots, um eine Anfrage auszufüllen.";
+"NSCameraUsageDescription" = "Fotografiere ein Preisschild oder eine Produktseite, um die Anfrage automatisch auszufüllen.";

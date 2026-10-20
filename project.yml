@@ -30,6 +30,11 @@ targets:
     platform: iOS
     sources:
       - path: Bushaoxin
+        # Resources/ 下放的是 <locale>.lproj/InfoPlist.strings。
+        # XcodeGen 会把 .lproj 目录识别为本地化资源，
+        # 并正确写入 pbxproj 的 knownRegions。
+        excludes:
+          - "**/*.bak"
     settings:
       base:
         # Bundle ID 一旦上传 App Store Connect 就不能再改 ——
@@ -51,6 +56,12 @@ targets:
     info:
       path: Bushaoxin/Info.plist
       properties:
+        # 这里的值只是兜底。真正的显示名按语言在
+        # Bushaoxin/Localization/InfoPlist.<locale>.strings 里覆盖，
+        # 那份文件由 verify/gen_info_plist_strings.py 生成。
+        #
+        # 中文用「不烧心」，其余语言用 Sleep On It ——
+        # "不烧心" 是中文特有的双关（烧心=后悔上火），翻不出去。
         CFBundleDisplayName: 不烧心
         NSPhotoLibraryUsageDescription: "用来从购物截图里自动识别商品名和价格，快速发起审批。"
         NSCameraUsageDescription: "用来拍摄价签或商品页，自动填入审批单。"
