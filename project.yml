@@ -19,6 +19,8 @@ settings:
     CURRENT_PROJECT_VERSION: "1"
     SUPPORTS_MACCATALYST: NO
     # 只出 iPhone 版；iPad 需要单独适配布局
+    # 注意：即使设成 1，Xcode 26 上传校验仍会检查 iPad 方向要求 ——
+    # 真正解决 90474 的是下方 info.properties 里的 UIRequiresFullScreen。
     TARGETED_DEVICE_FAMILY: "1"
     ENABLE_USER_SCRIPT_SANDBOXING: YES
 
@@ -56,6 +58,19 @@ targets:
         # 不声明的话，每次上传 TestFlight 都会被问一遍。
         ITSAppUsesNonExemptEncryption: false
         UILaunchScreen: {}
+        # 必须为 true，否则上传会被 90474 拒收。
+        #
+        # 报错原文：
+        #   The "UIInterfaceOrientationPortrait" orientations were provided for the
+        #   UISupportedInterfaceOrientations Info.plist key, but you need to include all of
+        #   Portrait, PortraitUpsideDown, LandscapeLeft, LandscapeRight to support iPad
+        #   multitasking.
+        #
+        # 背景：即使 TARGETED_DEVICE_FAMILY=1（只 iPhone），Xcode 26 上传校验
+        # 仍会按 iPad 多任务规则检查方向声明。UIRequiresFullScreen=YES
+        # 明确声明"本 App 不做 iPad 多任务"，只声明竖屏才合法。
+        # 这个键只对 iPad 生效，对 iPhone 没有任何影响。
+        UIRequiresFullScreen: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         # 声明支持的语言，App Store 会据此展示「支持中文/英语/日语/韩语」
