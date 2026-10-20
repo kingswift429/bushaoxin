@@ -1,0 +1,310 @@
+name: Release to TestFlight
+
+# 为什么有这个文件：
+#   开发机是 Windows，没有 Xcode，也没有 Mac。
+#   TestFlight 上传必须在一台装有 Xcode 和签名证书的机器上做，
+#   GitHub Actions 的 macOS runner 正好满足 —— 免费、够用、
+#   而且签名证书可以用 App Store Connect API Key 免手工配置。
+#
+# 前置条件（只需要做一次，见 docs/testflight-setup.md）：
+#   1. 在 App Store Connect 创建 API Key，下载 .p8
+#   2. 把三个值存进仓库 Secrets：
+#        ASC_KEY_ID       Key 的 ID（形如 2X9ABCD3EF）
+#        ASC_ISSUER_ID    Issuer ID（UUID 形式）
+#        ASC_KEY_P8       .p8 文件的**完整内容**（含 BEGIN/END 行）
+#   3. 在 App Store Connect 里先创建好 App（Bundle ID 必须一致）
+#
+# 触发方式：
+#   Actions 页 -> Release to TestFlight -> Run workflow
+#   或 push 一个 v* 开头的 tag（如 v1.0.0）
+#
+# 为什么用 API Key 而不是上传 .p12 证书：
+#   .p12 绑定单一分发证书，过期要重做，且私钥要存仓库。
+#   API Key 由 Apple 托管，xcodebuild 走 -allowProvisioningUpdates
+#   自动申请证书和描述文件，不需要任何本地密钥。
+
+on:
+  workflow_dispatch:
+    inputs:
+      changelog:
+        description: "给测试人员的更新说明（可留空）"
+        required: false
+        default: "例行更新"
+      skip_upload:
+        description: "只打包不上传（用于验证签名能否通过）"
+        required: false
+        type: boolean
+        default: false
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: testflight-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Archive & Upload
+    runs-on: macos-15
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Install XcodeGen
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+          HOMEBREW_NO_INSTALL_CLEANUP: "1"
+        run: |
+          brew install xcodegen
+          xcodegen --version
+
+      - name: Verify signing config
+        shell: bash
+        run: |
+          # Team ID 和 Bundle ID 写错时，后面会报「No signing certificate」之类的
+          # 模糊错误。这里提前把真实值打出来，一眼能看出配置对不对。
+          TEAM=$(sed -n 's/^ *DEVELOPMENT_TEAM: *//p' project.yml | head -1)
+          BID=$(sed -n 's/^ *PRODUCT_BUNDLE_IDENTIFIER: *//p' project.yml | head -1)
+          echo "DEVELOPMENT_TEAM        = $TEAM"
+          echo "PRODUCT_BUNDLE_IDENTIFIER = $BID"
+
+          if [ "$TEAM" = "YOUR_TEAM_ID_HERE" ] || [ -z "$TEAM" ]; then
+            echo "::error::project.yml 里的 DEVELOPMENT_TEAM 仍是占位符，签名必然失败"
+            exit 1
+          fi
+          if echo "$BID" | grep -q "yourteam"; then
+            echo "::error::project.yml 里的 PRODUCT_BUNDLE_IDENTIFIER 仍是占位符"
+            exit 1
+          fi
+
+      - name: Check secrets present
+        shell: bash
+        env:
+          K: ${{ secrets.ASC_KEY_ID }}
+          I: ${{ secrets.ASC_ISSUER_ID }}
+          P: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          # 缺 secret 时不要继续 —— 否则会在 xcodebuild 阶段才炸，
+          # 错误信息很难定位到「是 secret 没配」。
+          missing=0
+          [ -n "$K" ] || { echo "::error::缺少 secret ASC_KEY_ID"; missing=1; }
+          [ -n "$I" ] || { echo "::error::缺少 secret ASC_ISSUER_ID"; missing=1; }
+          [ -n "$P" ] || { echo "::error::缺少 secret ASC_KEY_P8"; missing=1; }
+          if [ "$missing" -ne 0 ]; then
+            echo "::error::请先按 docs/testflight-setup.md 配置三个 Secrets"
+            exit 1
+          fi
+          echo "三个 Secret 都存在"
+
+      - name: Install App Store Connect API key
+        shell: bash
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          # xcodebuild 只认这个固定路径：~/private_keys/AuthKey_<KEY_ID>.p8
+          # 放错位置会报「Unable to find matching private key」。
+          mkdir -p "$HOME/private_keys"
+          KEY_PATH="$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          printf '%s' "$ASC_KEY_P8" > "$KEY_PATH"
+
+          # .p8 必须是 PEM 格式，首尾行缺一不可（复制时经常漏掉末尾换行）
+          if ! head -1 "$KEY_PATH" | grep -q "BEGIN PRIVATE KEY"; then
+            echo "::error::.p8 内容不是 PEM 格式，第一行应为 -----BEGIN PRIVATE KEY-----"
+            head -2 "$KEY_PATH"
+            exit 1
+          fi
+          chmod 600 "$KEY_PATH"
+          echo "API Key 已安装：$KEY_PATH"
+          wc -l < "$KEY_PATH" | xargs echo "行数："
+
+      - name: Generate project
+        run: |
+          xcodegen generate --spec project.yml
+          test -f Bushaoxin.xcodeproj/project.pbxproj || {
+            echo "::error::xcodegen 没有生成工程文件"
+            exit 1
+          }
+
+      # ── 归档 ─────────────────────────────────────────────────
+      - name: Archive
+        shell: bash
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          set +e
+          set -o pipefail
+
+          # 用 generic/platform=iOS 而不是具体设备：
+          # runner 上没有连接任何 iPhone，指定具体设备会找不到 destination。
+          xcodebuild archive \
+            -project Bushaoxin.xcodeproj \
+            -scheme Bushaoxin \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/Bushaoxin.xcarchive \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            > archive.log 2>&1
+          STATUS=$?
+
+          echo "=========== 错误汇总 ==========="
+          if grep -qE "error:" archive.log; then
+            grep -E "error:" archive.log | sort -u | head -80
+          else
+            echo "（无 error: 行）"
+          fi
+
+          echo ""
+          echo "=========== 日志尾部 ==========="
+          tail -50 archive.log
+
+          if [ "$STATUS" -ne 0 ]; then
+            echo "::error::归档失败（exit $STATUS）"
+            exit "$STATUS"
+          fi
+
+          test -d build/Bushaoxin.xcarchive || {
+            echo "::error::归档返回成功但没有 .xcarchive 产物"
+            exit 1
+          }
+          echo "::notice::归档成功"
+
+      # ── 导出 .ipa ────────────────────────────────────────────
+      - name: Export IPA
+        shell: bash
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          cat > ExportOptions.plist <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <!-- app-store-connect = 上传 TestFlight / App Store -->
+            <key>method</key>
+            <string>app-store-connect</string>
+            <key>destination</key>
+            <string>export</string>
+            <!-- 自动管理签名，配合 -allowProvisioningUpdates 让 Apple 下发描述文件 -->
+            <key>signingStyle</key>
+            <string>automatic</string>
+            <key>uploadSymbols</key>
+            <true/>
+            <!-- 上传崩溃符号，TestFlight 的崩溃报告才可读 -->
+            <key>stripSwiftSymbols</key>
+            <true/>
+            <key>manageAppVersionAndBuildNumber</key>
+            <false/>
+          </dict>
+          </plist>
+          PLIST
+
+          set +e
+          set -o pipefail
+          xcodebuild -exportArchive \
+            -archivePath build/Bushaoxin.xcarchive \
+            -exportPath build/export \
+            -exportOptionsPlist ExportOptions.plist \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            > export.log 2>&1
+          STATUS=$?
+
+          echo "=========== 错误汇总 ==========="
+          if grep -qE "error:" export.log; then
+            grep -E "error:" export.log | sort -u | head -60
+          else
+            echo "（无 error: 行）"
+          fi
+          echo ""
+          tail -40 export.log
+
+          if [ "$STATUS" -ne 0 ]; then
+            echo "::error::导出 .ipa 失败（exit $STATUS）"
+            exit "$STATUS"
+          fi
+
+          IPA=$(find build/export -name "*.ipa" | head -1)
+          [ -n "$IPA" ] || { echo "::error::没有找到 .ipa"; exit 1; }
+          echo "::notice::IPA：$IPA ($(du -h "$IPA" | cut -f1))"
+
+      # ── 上传 TestFlight ──────────────────────────────────────
+      - name: Upload to TestFlight
+        if: ${{ inputs.skip_upload != true && github.event_name != 'pull_request' }}
+        shell: bash
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          IPA=$(find build/export -name "*.ipa" | head -1)
+          [ -n "$IPA" ] || { echo "::error::没有 .ipa 可上传"; exit 1; }
+
+          set +e
+          set -o pipefail
+          # altool 在 Xcode 14 后已废弃，但仍是上传 TestFlight 最稳的 CLI。
+          # --validate-app 先验证再上传，能提前发现 Info.plist / 图标等问题。
+          xcrun altool --validate-app \
+            -f "$IPA" \
+            -t ios \
+            --apiKey "$ASC_KEY_ID" \
+            --apiIssuer "$ASC_ISSUER_ID" \
+            > validate.log 2>&1
+          VSTATUS=$?
+
+          echo "=========== 验证结果 ==========="
+          cat validate.log | tail -40
+
+          if [ "$VSTATUS" -ne 0 ]; then
+            # 验证失败时常见原因：图标缺 alpha、缺 1024 图标、
+            # 版本号重复、隐私描述缺失。日志会写明。
+            echo "::error::上传前验证失败，见上方日志"
+            exit "$VSTATUS"
+          fi
+
+          echo ""
+          echo "=========== 开始上传 ==========="
+          xcrun altool --upload-app \
+            -f "$IPA" \
+            -t ios \
+            --apiKey "$ASC_KEY_ID" \
+            --apiIssuer "$ASC_ISSUER_ID" \
+            > upload.log 2>&1
+          USTATUS=$?
+
+          cat upload.log | tail -50
+
+          if [ "$USTATUS" -ne 0 ]; then
+            echo "::error::上传失败"
+            exit "$USTATUS"
+          fi
+          echo "::notice::已上传，稍后到 App Store Connect → TestFlight 查看处理状态"
+
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: testflight-build
+          path: |
+            archive.log
+            export.log
+            validate.log
+            upload.log
+            ExportOptions.plist
+            build/export/*.ipa
+          if-no-files-found: ignore
+          retention-days: 14
