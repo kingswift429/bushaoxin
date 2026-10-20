@@ -144,33 +144,33 @@ jobs:
           set +e
           set -o pipefail
 
-          # 为什么显式指定 CODE_SIGN_STYLE=Manual + 空 PROVISIONING_PROFILE_SPECIFIER：
+          # 归档阶段**完全不签名**，签名全部交给下面的 exportArchive 阶段。
           #
-          # Xcode 默认的 Automatic 签名会去申请 **iOS App Development** 描述文件。
-          # 而 Development 描述文件强制要求至少绑定一台设备（UDID），
-          # 账号里没绑过 iPhone 时会直接失败：
+          # 为什么要这样：
+          # xcodebuild archive 的签名走 build settings 体系，
+          # Automatic 模式下优先申请 iOS App Development 描述文件，
+          # 而 Development 要求至少绑定一台设备 UDID —— 这个账号从没绑过 iPhone：
           #   "Your team has no devices from which to generate a provisioning profile"
+          # 改 Manual 又要求写死 profile 名，而 profile 每次签发都不同：
+          #   "Bushaoxin requires a provisioning profile"
           #
-          # TestFlight / App Store 用的是 **iOS Distribution** 描述文件，
-          # 这类描述文件**不需要设备**。所以要告诉 xcodebuild:
-          #   1. 不要走 Automatic（否则它还是优先申请 Development）
-          #   2. 不要指定已有 profile（让 -allowProvisioningUpdates 现场签发 Distribution 的）
+          # 正解是绕开这个循环：
+          #   1. archive 用 CODE_SIGNING_ALLOWED=NO 出**未签名**的 .xcarchive
+          #   2. exportArchive 的 method=app-store-connect 强制走 Distribution 签名，
+          #      只认 iOS Distribution 描述文件 —— 这类描述文件不需要设备
           #
-          # 关键点：CODE_SIGN_IDENTITY 必须是 "Apple Distribution"，
-          # 写成 "iPhone Distribution"（旧版叫法）在 Xcode 16 下会匹配不到证书。
+          # 未签名的 archive 装不到真机，但 TestFlight 不需要：
+          # 它在导出阶段才签名，Apple 收到的已经是签好名的 .ipa。
           xcodebuild archive \
             -project Bushaoxin.xcodeproj \
             -scheme Bushaoxin \
             -configuration Release \
             -destination 'generic/platform=iOS' \
             -archivePath build/Bushaoxin.xcarchive \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
             PROVISIONING_PROFILE_SPECIFIER="" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
             > archive.log 2>&1
           STATUS=$?
 
@@ -213,11 +213,10 @@ jobs:
             <string>app-store-connect</string>
             <key>destination</key>
             <string>export</string>
-            <!-- automatic：让导出环节自己找匹配的 Distribution 描述文件。
-                 归档阶段已经用 Manual + 空 specifier 避免了 Development 签名，
-                 这里如果也写 manual，就必须提供具体的 profile UUID，
-                 但那个 UUID 每次签发都不同，没法写死。
-                 所以归档用 Manual、导出用 Automatic 是刻意的不对称。 -->
+            <!-- automatic：归档阶段是无签名的，所有签名在这里完成。
+                 exportArchive + method=app-store-connect 会强制签发
+                 iOS Distribution 描述文件（不需要设备 UDID），
+                 配合 -allowProvisioningUpdates 和 API Key 认证完成。 -->
             <key>signingStyle</key>
             <string>automatic</string>
             <key>uploadSymbols</key>
