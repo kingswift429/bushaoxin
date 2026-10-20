@@ -26,7 +26,10 @@ on:
 jobs:
   build:
     name: Build (macOS)
-    runs-on: macos-15
+    # macos-26：Apple 从 2026 年起要求用 iOS 26 SDK（Xcode 26）编译才能上架。
+    # macos-15 只有 Xcode 16.4（iOS 18.5 SDK），上传会被 409 拒收。
+    # 这里同步升级，保证 CI 编译环境和发布环境一致。
+    runs-on: macos-26
     timeout-minutes: 40
 
     steps:

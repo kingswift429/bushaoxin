@@ -46,7 +46,20 @@ concurrency:
 jobs:
   release:
     name: Archive & Upload
-    runs-on: macos-15
+    # 必须用 macos-26 而不是 macos-15。
+    #
+    # Apple 从 2026 年起拒收用旧 SDK 编译的包：
+    #   "This app was built with the iOS 18.5 SDK. All iOS and iPadOS apps
+    #    must be built with the iOS 26 SDK or later, included in Xcode 26
+    #    or later, in order to be uploaded to App Store Connect."
+    #
+    # macos-15 预装 Xcode 16.4（iOS 18.5 SDK）-> 会被 409 拒收。
+    # macos-26 预装 Xcode 26（iOS 26 SDK）-> 符合要求。
+    #
+    # 注意：编译用的 SDK 版本和 App 的 deploymentTarget 是两件事。
+    # deploymentTarget 仍是 iOS 17.0（支持老设备），
+    # 只是"用什么 SDK 编译"要求 iOS 26。
+    runs-on: macos-26
     timeout-minutes: 60
 
     steps:
@@ -57,6 +70,8 @@ jobs:
         run: |
           xcodebuild -version
           swift --version
+          echo "--- 已安装的 SDK ---"
+          xcodebuild -showsdks | grep -i iphoneos || true
 
       - name: Install XcodeGen
         env:
